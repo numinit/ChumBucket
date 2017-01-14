@@ -5,26 +5,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WebRole.Util
-{
-    public class StorageFile
-    {
+namespace WebRole.Util {
+    public class StorageFile {
         private Stream _stream;
         private string _name;
         private string _contentType;
 
-        public Stream InputStream
-        {
+        public Stream InputStream {
             get { return _stream; }
         }
 
-        public string Name
-        {
+        public string Name {
             get { return _name; }
         }
 
-        public string ContentType
-        {
+        public string ContentType {
             get { return _contentType; }
         }
         /**
@@ -33,15 +28,13 @@ namespace WebRole.Util
          * <param name="name">A human-readable name for the file.</param>
          * <param name="contentType">The MIME type of the stored file.</param>
          */
-        public StorageFile(Stream stream, string name, string contentType)
-        {
+        public StorageFile(Stream stream, string name, string contentType) {
             this._stream = stream;
             this._name = name;
             this._contentType = contentType;
         }
     }
-    interface StorageAdapter
-    {
+    interface StorageAdapter {
         /**
          * Stores a file.
          * Must return a unique key for subsequent access.

@@ -11,23 +11,19 @@ using Microsoft.WindowsAzure;
 using System.Configuration;
 using WebRole.Util;
 
-namespace WebRole.Controllers
-{
+namespace WebRole.Controllers {
     [RoutePrefix("file")]
-    public class FileController : Controller
-    {
+    public class FileController : Controller {
         private StorageAdapter _adapter;
 
-        public FileController() : base()
-        {
+        public FileController() : base() {
             var connectionString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ConnectionString;
             this._adapter = new BlobStorageAdapter(connectionString, "files");
         }
 
         [Route("submit")]
         [HttpPost]
-        public ActionResult Submit()
-        {
+        public ActionResult Submit() {
             try {
                 var postedFile = Request.Files["upload"];
                 if (postedFile == null) {
@@ -35,7 +31,8 @@ namespace WebRole.Controllers
                 }
 
                 // Store the file
-                var file = new StorageFile(postedFile.InputStream, postedFile.FileName, postedFile.ContentType);
+                var name = Path.GetFileNameWithoutExtension(postedFile.FileName);
+                var file = new StorageFile(postedFile.InputStream, name, postedFile.ContentType);
                 var key = this._adapter.Store(file);
 
                 // Created
