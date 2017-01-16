@@ -202,6 +202,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Util\BlobStorageAdapter.cs" />
+    <Compile Include="Util\DLStorageAdapter.cs" />
     <Compile Include="Util\StorageAdapter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
