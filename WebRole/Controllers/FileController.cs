@@ -18,7 +18,12 @@ namespace WebRole.Controllers {
 
         public FileController() : base() {
             var connectionString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ConnectionString;
-            this._adapter = new BlobStorageAdapter(connectionString, "files");
+            // TODO: figure out a better way to select an adapter. Right now, we are just 
+            // commenting out the unused one below.
+            // this._adapter = new BlobStorageAdapter(connectionString, "files");
+            System.Diagnostics.Debug.WriteLine("Constructor");
+            this._adapter = new DLStorageAdapter("<Your Subscription ID here>", "<Your client ID here>",
+             "<Your DL Analytics account name here>", "<Your DL Storage account name here>");
         }
 
         [Route("submit")]
