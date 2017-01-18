@@ -8,8 +8,6 @@ using Microsoft.Azure.Management.DataLake.Store;
 using Microsoft.Azure.Management.DataLake.StoreUploader;
 using Microsoft.Azure.Management.DataLake.Analytics;
 using Microsoft.Azure.Management.DataLake.Analytics.Models;
-using Microsoft.WindowsAzure.Storage.Blob;
-using System.Text;
 
 namespace WebRole.Util
 {
@@ -49,17 +47,20 @@ namespace WebRole.Util
 
         public string Store(StorageFile file) {
             // Create a file if it does not already exist
-            string fileName = "<Insert filepath here>"; // TODO: you must include a filepath here 
-            if (!File.Exists(fileName)) {
-                File.Create(fileName);
+            string localFolderPath = @"C:\Temp\";
+            string localFilePath = localFolderPath + "emptyFile";
+            if (!File.Exists(localFilePath)) {
+                File.Create(localFilePath);
             }
-            string key = Guid.NewGuid().ToString();
-            UploadFile(fileName, key, true); // TODO: avoid overwrite if file already exists in DL
+            string remoteFilePath = Guid.NewGuid().ToString();
+
+            UploadFile(localFilePath, remoteFilePath, true); // TODO: avoid overwrite if file already exists in DL
 
             // NOTE: We choose to read into a 28MB buffer because that is the default max content length for
             // an HTTP request to an Azure web server.
             int READSIZE = 28000000;
             byte[] buffer = new byte[READSIZE];
+            // Buffer the stream to the Data Lake
             while (file.InputStream.Position < file.InputStream.Length) {
                 System.Diagnostics.Debug.WriteLine(file.InputStream.Length - file.InputStream.Position);
                 System.Diagnostics.Debug.WriteLine("Before " + file.InputStream.Position);
@@ -70,10 +71,10 @@ namespace WebRole.Util
                 file.InputStream.Read(buffer, 0, (int)Math.Min(READSIZE, diff));
                 System.Diagnostics.Debug.WriteLine("After " + file.InputStream.Position);
                 MemoryStream memStream = new MemoryStream(buffer);
-                AppendToFile(key, memStream);
+                AppendToFile(remoteFilePath, memStream);
             }
 
-            return key;
+            return remoteFilePath;
         }
 
         public StorageFile Retrieve(string key) {
