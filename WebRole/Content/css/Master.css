@@ -1,0 +1,189 @@
+/* GENERAL FORMATTING */
+.navbar-brand {
+	line-height: 40px;
+	padding: 5px 15px;
+}
+.navbar-default .navbar-brand {
+	font-size:22px;
+}
+.navbar-default .navbar-toggle {
+	border-color: #CCC;
+}
+.bodySection {
+	padding:120px 10px;
+}
+.bodySectionSmall {
+	padding:60px 10px;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin: 20px 0px;
+}
+h3 {
+	color: #CCC;
+}
+p {
+	color: #888;
+	font-weight: 300;
+	margin: 0px
+}
+body {
+	font-family: Lato, Helvetica Neue, Arial;
+	font-weight:300;
+	background: rgb(18, 18, 18);
+}
+.row {
+	margin: 0px;
+}
+.navbar {
+	margin-bottom: 0px;
+}
+hr {
+	margin-top: 10px;
+	margin-bottom: 50px;
+	border: 0;
+	border-top: 2px solid #ccc
+}
+.btn-hollow-primary {
+	color: #2197cd;
+	background-color: transparent;
+}
+.vertical-align {
+  display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: row;
+}
+@media (max-width: 768px) {
+  .vertical-align {
+      display: block; /* turn off the flexible box layout */
+  }
+}
+
+
+/* ADD-ON STYLES */
+
+/* FONT STYLES */
+.thick {
+	font-weight:300;
+}
+.thin {
+	font-weight:100;
+}
+.whiteText {
+	color: white;
+}
+.grayText {
+	color: rgb(66, 66, 66);
+}
+.mediumGrayText {
+	color: rgb(121, 121, 121);
+}
+.lightGrayText {
+	color: rgb(146, 146, 146);
+}
+.blueText {
+	color: rgb(46, 163, 232);
+}
+.greenText {
+	color: rgb(84, 255, 160);
+}
+.darkGreenText {
+	color: rgb(54, 163, 102);
+}
+.redText {
+	color: rgb(255, 57, 81);
+}
+.font-size-20 {
+	font-size:20px;
+}
+
+/* BACKGROUND STYLES */
+.blueBackground {
+	background: rgb(46, 163, 232);
+}
+.blueBackgroundGradient {
+	/* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#22a1e5+0,7eb9e5+100 */
+	background: #22a1e5; /* Old browsers */
+	background: -moz-linear-gradient(left, #22a1e5 0%, #7eb9e5 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(left, #22a1e5 0%,#7eb9e5 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to right, #22a1e5 0%,#7eb9e5 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#22a1e5', endColorstr='#7eb9e5',GradientType=1 ); /* IE6-9 */
+}
+.lighterGrayBackground {
+	background:rgb(241, 241, 241);
+}
+
+/* MARGIN STYLES */
+.margin-bottom-20 {
+	margin-bottom:20px;
+}
+.margin-bottom-50 {
+	margin-bottom:50px;
+}
+.margin-top-20 {
+	margin-top:20px;
+}
+.margin-top-50 {
+	margin-top:50px;
+}
+
+/* Animations */
+.slideanim {
+	visibility:hidden;
+}
+.slide {
+  /* The name of the animation */
+  animation-name: slide;
+  -webkit-animation-name: slide;
+  /* The duration of the animation */
+  animation-duration: 1s;
+  -webkit-animation-duration: 1s;
+  /* Make the element visible */
+  visibility: visible;
+}
+
+/* Go from 0% to 100% opacity (see-through) and specify the percentage from when to slide in the element along the Y-axis */
+@keyframes slide {
+	0% {
+		opacity: 0;
+	  -webkit-transform: translateY(70%);
+	}
+	100% {
+    opacity: 1;
+    -webkit-transform: translateY(0%);
+	}
+}
+@-webkit-keyframes slide {
+  0% {
+    opacity: 0;
+     -webkit-transform: translateY(70%);
+  }
+  100% {
+     opacity: 1;
+     -webkit-transform: translateY(0%);
+  }
+}
+
+/** Form Components **/
+.inputTitle {
+	margin: 0px 0px -15px 0px;
+	display: block;
+}
+.inputError {
+	margin: -10px 0px 10px 20px;
+	color: #ff6c98;
+	font-weight: 300;
+	font-size: 15px;
+	display: block;
+}
+.messageDiv {
+	color: #ff6c98;
+	font-weight: bold;
+	margin-bottom: 20px;
+	text-align: center;
+}
+.radioSpan {
+	display: inline-block;
+	margin-left: 4px;
+	margin-right: 10px;
+}

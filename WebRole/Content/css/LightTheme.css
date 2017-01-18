@@ -1,0 +1,29 @@
+/* GENERAL FORMATTING */
+.navbar-default .navbar-nav>li>a,
+.navbar-default .navbar-brand	{
+	color: rgb(18, 18, 18);
+}
+.navbar-default .navbar-nav>li>a:hover,
+.navbar-default .navbar-nav>li>a:focus,
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus	{
+	color: rgb(120, 120, 120);
+}
+.navbar-default .navbar-toggle .icon-bar {
+	background-color: rgb(18, 18, 18);
+}
+.navbar-default .navbar-toggle:focus,
+.navbar-default .navbar-toggle:hover {
+	background-color: rgb(235, 235, 235);
+	border-color:white;
+}
+body {
+	background: white;
+	color: rgb(18, 18, 18);
+}
+h3 {
+	color: rgb(18, 18, 18);
+}
+input.form-control {
+	background: #f3f3f3;
+}
