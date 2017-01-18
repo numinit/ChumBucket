@@ -5,7 +5,7 @@ using Microsoft.WindowsAzure;
 using Microsoft.WindowsAzure.Diagnostics;
 using Microsoft.WindowsAzure.ServiceRuntime;
 
-namespace WebRole {
+namespace ChumBucket {
     public class WebRole : RoleEntryPoint {
         public override bool OnStart() {
             // For information on handling configuration changes

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace WebRole.Controllers {
+namespace ChumBucket.Controllers {
     public class ApplicationController : Controller {
         public ActionResult Index() {
             return View();

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WebRole.Util {
+namespace ChumBucket.Util {
     public class StorageFile {
         private Stream _stream;
         private string _name;
@@ -34,20 +34,63 @@ namespace WebRole.Util {
             this._contentType = contentType;
         }
     }
-    interface StorageAdapter {
+    public abstract class StorageAdapter {
         /**
          * Stores a file.
-         * Must return a unique key for subsequent access.
+         * Must return a unique URI for subsequent access.
          * <param name="file">The file to store</param>
+         * <returns>A unique URI for subsequent accesses</returns>
          */
-        string Store(StorageFile file);
+        public Uri Store(StorageFile file) {
+            return this.Store(file, Guid.NewGuid());
+        }
+  
+        /**
+         * Stores a file.
+         * Must return a unique URI for subsequent access.
+         * <param name="file">The file to store</param>
+         * <param name="guid">The GUID to key the stored file</param>
+         * <returns>A unique URI for subsequent accesses</returns>
+         */
+        public abstract Uri Store(StorageFile file, Guid guid);
 
         /**
-         * Retrieves a file from a key.
-         * If the key is invalid, must throw an ArgumentException.
+         * Retrieves a file from a URI.
+         * If the URI is invalid, must throw an ArgumentException.
          * If the file does not exist, must throw a KeyNotFoundException.
-         * <param name="key">The key</param>
+         * <param name="uri">The URI to retrieve</param>
+         * <returns>The file</returns>
          */
-        StorageFile Retrieve(string key);
+        public abstract StorageFile Retrieve(Uri uri);
+
+        /**
+         * Lists all StorageFile instances in this adapter.
+         * <returns>An ICollection of StorageFiles</returns>
+         */
+        public abstract ICollection<StorageFile> List();
+
+        /**
+         * Throws an ArgumentException if this StorageAdapter
+         * does not accept the specified URI.
+         * <param name="uri">The URI</param>
+         */
+        public void AssertAccepts(Uri uri) {
+            if (!this.WillAccept(uri)) {
+                throw new ArgumentException("illegal URI");
+            }
+        }
+
+        /**
+         * Returns whether this StorageAdapter will accept the specified URI.
+         * <param name="uri">The URI</param>
+         * <returns>True if we can handle this URI, false otherwise</returns>
+         */
+        public abstract bool WillAccept(Uri uri);
+
+        /**
+         * Builds a URI for this adapter from a GUID.
+         * <param name="guid">The GUID</param>
+         */
+        public abstract Uri BuildUri(Guid guid);
     }
 }
