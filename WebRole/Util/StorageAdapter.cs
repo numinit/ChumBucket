@@ -34,7 +34,34 @@ namespace ChumBucket.Util {
             this._contentType = contentType;
         }
     }
-    public abstract class StorageAdapter {
+
+    public abstract class UriKeyable {
+        /**
+         * Throws an ArgumentException if this UriKeyable
+         * does not accept the specified URI.
+         * <param name="uri">The URI</param>
+         */
+        public void AssertAccepts(Uri uri) {
+            if (!this.WillAccept(uri)) {
+                throw new ArgumentException("illegal URI");
+            }
+        }
+
+        /**
+         * Returns whether this UriKeyable will accept the specified URI.
+         * <param name="uri">The URI</param>
+         * <returns>True if we can handle this URI, false otherwise</returns>
+         */
+        public abstract bool WillAccept(Uri uri);
+
+        /**
+         * Builds a URI for this UriKeyable from a GUID.
+         * <param name="guid">The GUID</param>
+         */
+        public abstract Uri BuildUri(Guid guid);
+    }
+
+    public abstract class StorageAdapter : UriKeyable {
         /**
          * Stores a file.
          * Must return a unique URI for subsequent access.
@@ -68,29 +95,5 @@ namespace ChumBucket.Util {
          * <returns>An ICollection of StorageFiles</returns>
          */
         public abstract ICollection<StorageFile> List();
-
-        /**
-         * Throws an ArgumentException if this StorageAdapter
-         * does not accept the specified URI.
-         * <param name="uri">The URI</param>
-         */
-        public void AssertAccepts(Uri uri) {
-            if (!this.WillAccept(uri)) {
-                throw new ArgumentException("illegal URI");
-            }
-        }
-
-        /**
-         * Returns whether this StorageAdapter will accept the specified URI.
-         * <param name="uri">The URI</param>
-         * <returns>True if we can handle this URI, false otherwise</returns>
-         */
-        public abstract bool WillAccept(Uri uri);
-
-        /**
-         * Builds a URI for this adapter from a GUID.
-         * <param name="guid">The GUID</param>
-         */
-        public abstract Uri BuildUri(Guid guid);
     }
 }

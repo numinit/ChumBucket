@@ -9,7 +9,7 @@ using System.Linq;
 using System.Web;
 
 namespace WebRole.Util {
-    public class DLJobAdapter {
+    public class DLJobAdapter : UriKeyable {
         private DLClient _client;
         private DLStorageAdapter _resultStorage;
         private DataLakeAnalyticsJobManagementClient _jobClient;
@@ -42,11 +42,32 @@ namespace WebRole.Util {
             return this.BuildUri(jobId);
         }
 
-        public JobInformation GetJobInfo(Guid jobId) {
-            return this._jobClient.Job.Get(this._client.AccountName, jobId);
+        public JobInformation GetJobInfo(Uri uri) {
+            this.AssertAccepts(uri);
+
+            // Get the job GUID from the URI
+            var guid = new Guid(uri.AbsolutePath.Substring(1));
+            var ret = this._jobClient.Job.Get(this._client.AccountName, guid);
+            if (ret == null) {
+                throw new KeyNotFoundException(string.Format("job {0} does not exist", guid.ToString()));
+            }
+            return ret;
         }
 
-        private Uri BuildUri(Guid guid) {
+        public StorageFile GetJobResult(Uri uri) {
+            this.AssertAccepts(uri);
+
+            var guid = new Guid(uri.AbsolutePath.Substring(1));
+            var storageUri = this._resultStorage.BuildUri(guid);
+            return this._resultStorage.Retrieve(storageUri);
+        }
+
+        public override bool WillAccept(Uri uri) {
+            return uri.Scheme.Equals("chumbucket") &&
+                   uri.Host.Equals("job");
+        }
+
+        public override Uri BuildUri(Guid guid) {
             var builder = new UriBuilder();
             builder.Scheme = "chumbucket";
             builder.Host = "job";

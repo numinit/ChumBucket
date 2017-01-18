@@ -10,21 +10,12 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure;
 using System.Configuration;
 using ChumBucket.Util;
+using WebRole;
 
 namespace ChumBucket.Controllers {
     [RoutePrefix("file")]
     public class FileController : Controller {
-        private StorageAdapter _adapter;
-
-        public FileController() : base() {
-            var connectionString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ConnectionString;
-            // TODO: figure out a better way to select an adapter. Right now, we are just 
-            // commenting out the unused one below.
-            this._adapter = new BlobStorageAdapter(connectionString, "files");
-            //System.Diagnostics.Debug.WriteLine("Constructor");
-            //this._adapter = new DLStorageAdapter("<Your Subscription ID here>", "<Your client ID here>",
-            // "<Your DL Analytics account name here>", "<Your DL Storage account name here>");
-        }
+        private StorageAdapter _adapter = AzureConfig.FILE_ADAPTER;
 
         [HttpPost]
         [Route("submit")]

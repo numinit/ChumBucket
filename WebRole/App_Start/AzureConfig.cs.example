@@ -1,0 +1,33 @@
+﻿using ChumBucket.Util;
+using System;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Linq;
+using System.Web;
+using WebRole.Util;
+
+namespace WebRole {
+    public sealed class AzureConfig {
+        public static BlobStorageAdapter FILE_ADAPTER;
+        public static DLClient DL;
+        public static DLStorageAdapter DL_UPLOAD;
+        public static DLStorageAdapter DL_RESULT;
+        public static DLJobAdapter DL_JOB;
+
+        public static void CreateClients() {
+            var connectionString = ConfigurationManager.ConnectionStrings["StorageConnectionString"].ConnectionString;
+            AzureConfig.FILE_ADAPTER = new BlobStorageAdapter(connectionString, "files");
+
+            var accountName = "chumbucket";
+            var secret = "<ACCOUNT SECRET>";
+            var subId = "<ACCOUNT SUB UUID>";
+            var clientId = "<ACCOUNT CLIENT UUID>";
+            var domain = "<USERNAME>.onmicrosoft.com";
+            AzureConfig.DL = new DLClient(accountName, secret, subId, clientId, domain);
+
+            AzureConfig.DL_UPLOAD = new DLStorageAdapter(AzureConfig.DL, "upload");
+            AzureConfig.DL_RESULT = new DLStorageAdapter(AzureConfig.DL, "result");
+            AzureConfig.DL_JOB = new DLJobAdapter(AzureConfig.DL, AzureConfig.DL_RESULT);
+        }
+    }
+}

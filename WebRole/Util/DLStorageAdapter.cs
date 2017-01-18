@@ -68,7 +68,10 @@ namespace ChumBucket.Util
                 Name = file.Name,
                 ContentType = file.ContentType
             });
-            new StreamWriter(meta).WriteLine(json);
+            
+            using (var writer = new StreamWriter(meta)) {
+                writer.WriteLine(json);
+            }
             return this.BuildUri(guid);
         }
 
@@ -144,9 +147,10 @@ namespace ChumBucket.Util
         }
 
         private Meta ReadMeta(Stream stream) {
-            var metaReader = new StreamReader(stream);
-            var json = metaReader.ReadToEnd();
-            return JsonConvert.DeserializeObject<Meta>(json);
+            using (var metaReader = new StreamReader(stream)) {
+                var json = metaReader.ReadToEnd();
+                return JsonConvert.DeserializeObject<Meta>(json);
+            }
         }
     }
 }
