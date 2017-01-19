@@ -41,7 +41,7 @@ namespace ChumBucket.Util {
 
             try {
                 // The GUID is in the URI's path; strip the leading slash
-                var guid = Guid.Parse(uri.AbsolutePath.Substring(1));
+                var guid = Guid.Parse(Path.GetFileNameWithoutExtension(uri.AbsolutePath));
                 var key = guid.ToString();
 
                 // Find a reference to the blob
@@ -56,8 +56,7 @@ namespace ChumBucket.Util {
                         name = key;
                     }
 
-                    var contentType = this.contentTypeOrDefault(blob.Properties.ContentType);
-                    return new StorageFile(stream, name, contentType);
+                    return new StorageFile(stream, name, blob.Properties.ContentType);
                 }
             } catch (Exception e) when (e is ArgumentNullException || e is FormatException) {
                 throw new ArgumentException(e.Message);
@@ -73,32 +72,23 @@ namespace ChumBucket.Util {
                 if (name == null) {
                     name = blob.Name;
                 }
-                var contentType = this.contentTypeOrDefault(blob.Properties.ContentType);
-                ret.Add(new StorageFile(blob.OpenRead(), name, contentType));
+                ret.Add(new StorageFile(blob.OpenRead(), name, blob.Properties.ContentType));
             }
             return ret;
         }
 
         public override bool WillAccept(Uri uri) {
-            // wasb://<user>@<host>
             return uri.Scheme.Equals("wasb") &&
                    string.Format("{0}@{1}", uri.UserInfo, uri.Host).Equals(this._authority);
         }
 
         public override Uri BuildUri(Guid guid) {
+            // wasb://{container}@{account}/{guid}
             var builder = new UriBuilder();
             builder.Scheme = "wasb";
             builder.Host = this._authority;
             builder.Path = string.Format("/{0}", guid.ToString());
             return builder.Uri;
-        }
-
-        private string contentTypeOrDefault(string contentType) {
-            if (contentType != null) {
-                return contentType;
-            } else {
-                return "application/octet-stream";
-            }
         }
     }
 }

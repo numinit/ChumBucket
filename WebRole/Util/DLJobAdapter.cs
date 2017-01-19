@@ -46,7 +46,7 @@ namespace WebRole.Util {
             this.AssertAccepts(uri);
 
             // Get the job GUID from the URI
-            var guid = new Guid(uri.AbsolutePath.Substring(1));
+            var guid = new Guid(Path.GetFileNameWithoutExtension(uri.AbsolutePath));
             var ret = this._jobClient.Job.Get(this._client.AccountName, guid);
             if (ret == null) {
                 throw new KeyNotFoundException(string.Format("job {0} does not exist", guid.ToString()));
@@ -68,6 +68,7 @@ namespace WebRole.Util {
         }
 
         public override Uri BuildUri(Guid guid) {
+            // chumbucket://job/{guid}
             var builder = new UriBuilder();
             builder.Scheme = "chumbucket";
             builder.Host = "job";

@@ -20,7 +20,15 @@ namespace ChumBucket.Util {
         }
 
         public string ContentType {
-            get { return _contentType; }
+            get {
+                if (this._name != null && this._name.EndsWith(".csv")) {
+                    return "text/csv";
+                } else if (this._contentType != null) {
+                    return this._contentType;
+                } else {
+                    return "application/octet-stream";
+                }
+            }
         }
         /**
          * Initializes this File.

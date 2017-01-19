@@ -37,6 +37,8 @@ namespace WebRole.Controllers {
             [JsonProperty("durationMs")]
             public int Duration { get; set; }
 
+
+
             [JsonProperty("result")]
             public string Result { get; set; }
 
@@ -81,9 +83,7 @@ namespace WebRole.Controllers {
                 var job = this._job.GetJobInfo(uri);
 
                 Response.StatusCode = 200;
-                return Json(new {
-                    result = JobToResult(job)
-                }, JsonRequestBehavior.AllowGet);
+                return this.JobToResult(job);
             } catch (Exception e) when (e is ArgumentException || e is FormatException || e is JsonException) {
                 // Bad request
                 Response.StatusCode = 400;
@@ -127,10 +127,11 @@ namespace WebRole.Controllers {
             }
         }
 
-        private JobStatusResult JobToResult(JobInformation info, string result = null) {
+        private JsonResult JobToResult(JobInformation info) {
             var state = info.State.Value;
             var statusString = "UNKNOWN";
-            var startTime = info.StartTime.Value;
+            var startTime = info.SubmitTime.Value;
+            var startTimeString = startTime.ToString("o");
             int duration = 0;
             if (state == JobState.Ended) {
                 statusString = info.Result.ToString().ToUpper();
@@ -140,12 +141,29 @@ namespace WebRole.Controllers {
                 duration = (int)Math.Round(DateTimeOffset.Now.Subtract(startTime).TotalMilliseconds);
             }
 
-            return new JobStatusResult {
-                Status = statusString,
-                StartTime = startTime.ToString(),
-                Duration = duration,
-                Result = result
-            };
+            if (info.Result != JobResult.Failed) {
+                return Json(new {
+                    result = new {
+                        status = statusString,
+                        startTime = startTimeString,
+                        durationMs = duration
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            } else {
+                var errorMessages = new List<string>();
+                foreach (var error in info.ErrorMessage) {
+                    // super annoying :(
+                    errorMessages.Add(string.Format("Message: {0}\nDescription: {1}\nDetails: {2}", error.Message, error.Description, error.Details));
+                }
+                return Json(new {
+                    result = new {
+                        status = statusString,
+                        startTime = startTimeString,
+                        duration = duration,
+                        errorMessages = errorMessages
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.Azure.Management.DataLake.Analytics.Models;
 using WebRole.Util;
 using Newtonsoft.Json;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace ChumBucket.Util
 {
@@ -57,21 +58,24 @@ namespace ChumBucket.Util
                 throw new ArgumentException("content type must be text/csv");
             }
 
-            var upload = this._fs.Open(this._client.AccountName, this.UploadPath(guid));
-            var meta = this._fs.Open(this._client.AccountName, this.MetaPath(guid));
+            // Create and open the upload and meta files
+            var uploadPath = this.UploadPath(guid);
+            var metaPath = this.MetaPath(guid);
+            this._fs.Create(this._client.AccountName, uploadPath);
+            this._fs.Create(this._client.AccountName, metaPath);
 
             // Write the file
-            file.InputStream.CopyTo(upload);
+            this._fs.ConcurrentAppend(this._client.AccountName, uploadPath, file.InputStream);
 
             // Write the metadata
             var json = JsonConvert.SerializeObject(new Meta {
                 Name = file.Name,
                 ContentType = file.ContentType
             });
+
+            var metaStream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            this._fs.Append(this._client.AccountName, metaPath, metaStream);
             
-            using (var writer = new StreamWriter(meta)) {
-                writer.WriteLine(json);
-            }
             return this.BuildUri(guid);
         }
 
@@ -80,7 +84,7 @@ namespace ChumBucket.Util
 
             try {
                 // Strip the leading slash from the URI's path to get the GUID
-                var guid = Guid.Parse(uri.AbsolutePath.Substring(1));
+                var guid = Guid.Parse(Path.GetFileNameWithoutExtension(uri.AbsolutePath));
                 var uploadPath = this.UploadPath(guid);
                 var metaPath = this.MetaPath(guid);
 
@@ -131,6 +135,7 @@ namespace ChumBucket.Util
         }
 
         public override Uri BuildUri(Guid guid) {
+            // adl://chumbucket.azuredatalake.net/{contaner}/{guid}.csv
             var builder = new UriBuilder();
             builder.Scheme = "adl";
             builder.Host = this._authority;

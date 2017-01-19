@@ -7,6 +7,7 @@ using Microsoft.Rest.Azure.Authentication;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Web;
 
 namespace WebRole.Util {
@@ -30,7 +31,7 @@ namespace WebRole.Util {
         }
 
         public DLClient(string accountName, string clientSecret, string subId,
-                        string clientId = null, string domain = "common") {
+                        string clientId, string domain) {
             if (clientId == null) {
                 clientId = Guid.NewGuid().ToString();
             }
