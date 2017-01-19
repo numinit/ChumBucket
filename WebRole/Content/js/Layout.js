@@ -66,21 +66,26 @@ const getJobResultsFromServer = (jobURI) =>
 
 const sendQuery = () =>
 {
-  var jobURI
   var iFrequency = 2000; // frequency of check
   var myInterval;
   var job = {status: "IDLE"}
 
-  query = document.getElementById("query").value
-  var jobURI = sendQueryToServer(query).then(jobJson => {job.status = jobJson.status})
-  if(job.status === "SUCCEEDED")
+  query = document.getElementById("query").innerHTML
+  sendQueryToServer(query).then(jobJson =>
   {
-    clearInterval(myInterval);  // stop checking server
+    job.status = jobJson.status
+    job.uri = jobJson.uri
+  })
+  .then(
+    if(job.status === "SUCCEEDED")
+    {
+      clearInterval(myInterval);  // stop checking server
 
-    document.getElementById("resultsButton").style.display = "inline"
-    displayResults(jobURI)
-  }
-  myInterval = setInterval("getJobStatusFromServer()", iFrequency, jobURI);
+      document.getElementById("resultsButton").style.display = "inline"
+      displayResults(job.uri)
+    }
+  )
+  myInterval = setInterval("getJobStatusFromServer()", iFrequency, job.uri);
 }
 
 const displayResults = (jobURI) =>
