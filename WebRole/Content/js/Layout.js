@@ -75,8 +75,6 @@ const sendQuery = () =>
   {
     job.status = jobJson.status
     job.uri = jobJson.uri
-  })
-  .then(
     if(job.status === "SUCCEEDED")
     {
       clearInterval(myInterval);  // stop checking server
@@ -84,8 +82,20 @@ const sendQuery = () =>
       document.getElementById("resultsButton").style.display = "inline"
       displayResults(job.uri)
     }
-  )
-  myInterval = setInterval("getJobStatusFromServer()", iFrequency, job.uri);
+    setInterval("getJobStatus()", iFrequency, job);
+  })
+}
+
+const getJobStatus = (job) =>
+{
+  var jsonToReturn = {}
+  getJobStatusFromServer(job.uri).then(jobJson =>
+  {
+    jsonToReturn.uri = jobJson.uri;
+    jsonToReturn.status = jobJson.status
+    return jsonToReturn
+  })
+  return jsonToReturn
 }
 
 const displayResults = (jobURI) =>
