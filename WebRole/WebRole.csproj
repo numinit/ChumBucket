@@ -243,6 +243,32 @@
     <Compile Include="WebRole.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\bootstrap\css\bootstrap-select.css" />
+    <Content Include="Content\bootstrap\css\bootstrap-select.min.css" />
+    <Content Include="Content\bootstrap\css\bootstrap-theme.css" />
+    <Content Include="Content\bootstrap\css\bootstrap-theme.min.css" />
+    <Content Include="Content\bootstrap\css\bootstrap.css" />
+    <Content Include="Content\bootstrap\css\bootstrap.min.css" />
+    <Content Include="Content\bootstrap\css\datepicker.css" />
+    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="Content\bootstrap\js\bootstrap-datepicker.js" />
+    <Content Include="Content\bootstrap\js\bootstrap-select.js" />
+    <Content Include="Content\bootstrap\js\bootstrap-select.min.js" />
+    <Content Include="Content\bootstrap\js\bootstrap.js" />
+    <Content Include="Content\bootstrap\js\bootstrap.min.js" />
+    <Content Include="Content\bootstrap\js\npm.js" />
+    <Content Include="Content\css\LightTheme.css" />
+    <Content Include="Content\css\Master.css" />
+    <Content Include="Content\images\ChumBucket.svg" />
+    <Content Include="Content\images\DarwinMaskIcon.svg" />
+    <Content Include="Content\images\DefaultPerson.svg" />
+    <Content Include="Content\images\gearsDark.svg" />
+    <Content Include="Content\images\gearsLight.svg" />
+    <Content Include="Content\images\LoadingGear150.gif" />
+    <Content Include="Content\js\FooterLight.js" />
+    <Content Include="Content\js\HeaderLight.js" />
+    <Content Include="Content\js\Master.js" />
+    <Content Include="Content\js\sortable.js" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
@@ -265,6 +291,18 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Content\bootstrap\css\bootstrap-select.css.map" />
+    <Content Include="Content\bootstrap\css\bootstrap-theme.css.map" />
+    <Content Include="Content\bootstrap\css\bootstrap-theme.min.css.map" />
+    <Content Include="Content\bootstrap\css\bootstrap.css.map" />
+    <Content Include="Content\bootstrap\css\bootstrap.min.css.map" />
+    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="Content\bootstrap\js\bootstrap-select.js.map" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
