@@ -58,6 +58,9 @@ namespace WebRole.Controllers {
                     json = reader.ReadToEnd();
                 }
                 var request = JsonConvert.DeserializeObject<SubmitRequest>(json);
+                if (request == null) {
+                    throw new ArgumentException("invalid request");
+                }
                 var jobUri = this._job.SubmitJob(request.Name, new Uri(request.Uri), request.Code);
 
                 Response.StatusCode = 201;

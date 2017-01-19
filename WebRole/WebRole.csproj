@@ -263,6 +263,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="WebRole.cs" />
+    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap\css\bootstrap-select.css" />
@@ -314,9 +315,6 @@
     <Folder Include="App_Data\" />
     <Folder Include="Content\FineUploader\azure.fine-uploader\" />
     <Folder Include="Views\Analysis\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap\css\bootstrap-select.css.map" />
