@@ -259,6 +259,8 @@
     <Content Include="Content\bootstrap\js\npm.js" />
     <Content Include="Content\css\LightTheme.css" />
     <Content Include="Content\css\Master.css" />
+    <Content Include="Content\FineUploader\test.html" />
+    <Content Include="Content\FineUploader\Uploader.js" />
     <Content Include="Content\images\ChumBucket.svg" />
     <Content Include="Content\images\DarwinMaskIcon.svg" />
     <Content Include="Content\images\DefaultPerson.svg" />
@@ -288,6 +290,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Content\FineUploader\azure.fine-uploader\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="packages.config" />

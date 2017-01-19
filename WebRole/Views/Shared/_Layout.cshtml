@@ -1,17 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-
-		<!--Page Meta Data-->
+    <!--Page Meta Data-->
     <title>Chum Bucket</title>
-		<meta name="author" content="Comp 410">
-		<meta name="robots" content="index, follow">
+    <meta name="author" content="Comp 410">
+    <meta name="robots" content="index, follow">
 
-		<!-- Load in External Resources -->
+    <!-- Load in External Resources -->
     <!-- CSS -->
     @Styles.Render("~/Content/css/Master.css")
     @Styles.Render("~/Content/css/LightTheme.css")
@@ -28,64 +27,65 @@
     @Scripts.Render("~/Content/js/Master.js")
     <!-- <link rel="mask-icon" href="/resources/images/DarwinMaskLogo.svg" color="black"> -->
     <!-- <link href="/resources/bootstrap/css/bootstrap.min.css" rel="stylesheet"> -->
-		<!-- <link href="/resources/css/Master.css" rel="stylesheet"> -->
-		<!-- <link href="/resources/css/LightTheme.css" rel="stylesheet"> -->
-
+    <!-- <link href="/resources/css/Master.css" rel="stylesheet"> -->
+    <!-- <link href="/resources/css/LightTheme.css" rel="stylesheet"> -->
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> -->
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <!-- <script src="/resources/bootstrap/js/bootstrap.min.js"></script> -->
-		<!-- Include Master Javascript file -->
-		<!-- <script src="/resources/js/Master.js"></script> -->
-		<!-- Load in the fonts from Google -->
-		<link href="https://fonts.googleapis.com/css?family=Lato:100,300" rel="stylesheet">
+    <!-- Include Master Javascript file -->
+    <!-- <script src="/resources/js/Master.js"></script> -->
+    <!-- Load in the fonts from Google -->
+    <link href="https://fonts.googleapis.com/css?family=Lato:100,300" rel="stylesheet">
 
-		<!--CSS Style-->
-		<style>
-		</style>
-  </head>
-  <body>
+    <!--CSS Style-->
+    <style>
+    </style>
+</head>
+<body>
 
-		<!--Page Header-->
+    <!--Page Header-->
     @Scripts.Render("~/Content/js/HeaderLight.js")
+    @Scripts.Render("~/Content/")
     @RenderBody()
     <!-- <script src="/resources/js/HeaderLight.js"></script> -->
+    <!---------------->
+    <!--Page Content-->
+    <!---------------->
 
-		<!---------------->
-		<!--Page Content-->
-		<!---------------->
+    <div class="container-fluid text-center bodySection">
+        <row>
+            <div class="col-sm-2">&nbsp;</div>
+            <div class="col-sm-8">
+                <img src="@Url.Content("~/Content/images/ChumBucket.svg")" style="height:200px;" alt="Darwin Logo" />
+                <h1>Chum Bucket</h1>
+            </div>
+            <div class="col-sm-2">&nbsp;</div>
+        </row>
+        <row>
+            <div class="col-sm-3">&nbsp;</div>
+            <div class="col-sm-6">
+                <blockquote>
+                    <p>Goodbye everyone, I'll remember you all in therapy.</p>
+                    <footer>Plankton</footer>
+                </blockquote>
+                <br /><br />
+                <button class="btn btn-default" type="button" onclick="location.href = '@Url.Content("~/Content/FineUploader/test.html")'">Upload CSV</button>
+                <br /><br />
+                <button class="btn btn-default" type="button" onclick="startAnalysis()">Start Analysis</button>
+            </div>
+            <div class="col-sm-3">&nbsp;</div>
+        </row>
+    </div>
 
-		<div class="container-fluid text-center bodySection">
-			<row>
-				<div class="col-sm-2">&nbsp;</div>
-				<div class="col-sm-8">
-					<img src="@Url.Content("~/Content/images/ChumBucket.svg")" style="height:200px;" alt="Darwin Logo"/>
-					<h1>Chum Bucket</h1>
-				</div>
-				<div class="col-sm-2">&nbsp;</div>
-			</row>
-			<row>
-				<div class="col-sm-3">&nbsp;</div>
-				<div class="col-sm-6">
-					<blockquote>
-					  <p>Goodbye everyone, I'll remember you all in therapy.</p>
-					  <footer>Plankton</footer>
-					</blockquote>
-          <br/><br/>
-          <button class="btn btn-default" type="button" onclick="startAnalysis()">Start Analysis</button>
-				</div>
-				<div class="col-sm-3">&nbsp;</div>
-			</row>
-		</div>
-
-		<!--Page Footer-->
+    <!--Page Footer-->
     @Scripts.Render("~/Content/js/FooterLight.js")
-		<!-- <script src="/resources/js/FooterLight.js"></script> -->
-  </body>
+    <!-- <script src="/resources/js/FooterLight.js"></script> -->
+</body>
 </html>
