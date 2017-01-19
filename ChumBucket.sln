@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{CC5FD16D-436D-48AD-A40C-5A424C6E3E79}") = "ChumBucket", "AzureBlobTest\ChumBucket.ccproj", "{3A6590E7-1F56-4174-B28C-0A6BF9A1EC9E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebRole", "WebRole\WebRole.csproj", "{473633C8-3C8C-468A-8B49-1050521D7D9F}"
 EndProject
 Global
