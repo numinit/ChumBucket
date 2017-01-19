@@ -8,172 +8,154 @@ using Microsoft.Azure.Management.DataLake.Store;
 using Microsoft.Azure.Management.DataLake.StoreUploader;
 using Microsoft.Azure.Management.DataLake.Analytics;
 using Microsoft.Azure.Management.DataLake.Analytics.Models;
+using WebRole.Util;
+using Newtonsoft.Json;
+using System.Text.RegularExpressions;
+using System.Text;
 
-namespace WebRole.Util
+namespace ChumBucket.Util
 {
     public class DLStorageAdapter : StorageAdapter {
-        private string _subscriptionId;
-        private string _clientId;
-        private string _domainName; // Replace this string with the user's Azure Active Directory tenant ID or domain name, if needed.
+        private DLClient _client;
+        private IFileSystemOperations _fs;
 
-        private string _adlaAccountName;
-        private string _adlsAccountName;
+        /**
+         * The "container" name.
+         */
+        private string _containerName;
 
-        private DataLakeAnalyticsAccountManagementClient _adlaClient;
-        private DataLakeStoreFileSystemManagementClient _adlsFileSystemClient;
-        private DataLakeAnalyticsJobManagementClient _adlaJobClient;
+        /**
+         * The authority for URIs produced by this instance
+         */
+        private string _authority;
 
-        public DLStorageAdapter(string subscriptionId, string clientId, 
-            string adlaAccountName, string adlsAccountName, string domainName = "common") {
-
-            this._subscriptionId = subscriptionId;
-            this._clientId = clientId;
-            this._domainName = domainName;
-
-            // Supply a client ID if one is not already specified
-            if (this._clientId.Length == 0) {
-                var guid = Guid.NewGuid();
-                var key = guid.ToString();
-                this._clientId = key;
-            }
-
-            this._adlaAccountName = adlaAccountName;
-            this._adlsAccountName = adlsAccountName;
-
-            // Connect to Azure
-            var creds = AuthenticateAzure(this._domainName, this._clientId);
-            SetupClients(creds, this._subscriptionId);
+        /**
+         * A simple JSON serializable object for upload metadata
+         */
+        private class Meta {
+            [JsonProperty("name")]
+            public string Name { get; set; }
+            [JsonProperty("contentType")]
+            public string ContentType { get; set; }
         }
 
-        public string Store(StorageFile file) {
-            // Create a file if it does not already exist
-            string localFolderPath = @"C:\Temp\";
-            string localFilePath = localFolderPath + "emptyFile";
-            if (!File.Exists(localFilePath)) {
-                File.Create(localFilePath);
+        public DLStorageAdapter(DLClient client, string containerName) {
+            this._client = client;
+            this._fs = this._client.FsClient.FileSystem;
+            this._containerName = containerName;
+
+            // The authority for this adapter is <account name>.azuredatalake.net
+            this._authority = string.Format("{0}.azuredatalake.net", this._client.AccountName);
+
+            // Make job control directories
+            if (!this._fs.PathExists(this._client.AccountName, containerName)) {
+                this._fs.Mkdirs(this._client.AccountName, containerName);
             }
-            string remoteFilePath = Guid.NewGuid().ToString();
-
-            UploadFile(localFilePath, remoteFilePath, true); // TODO: avoid overwrite if file already exists in DL
-
-            // NOTE: We choose to read into a 28MB buffer because that is the default max content length for
-            // an HTTP request to an Azure web server.
-            int READSIZE = 28000000;
-            byte[] buffer = new byte[READSIZE];
-            // Buffer the stream to the Data Lake
-            while (file.InputStream.Position < file.InputStream.Length) {
-                System.Diagnostics.Debug.WriteLine(file.InputStream.Length - file.InputStream.Position);
-                System.Diagnostics.Debug.WriteLine("Before " + file.InputStream.Position);
-                int diff = (int)(file.InputStream.Length - file.InputStream.Position);
-                if (diff < READSIZE) {
-                    buffer = new byte[diff];
-                }
-                file.InputStream.Read(buffer, 0, (int)Math.Min(READSIZE, diff));
-                System.Diagnostics.Debug.WriteLine("After " + file.InputStream.Position);
-                MemoryStream memStream = new MemoryStream(buffer);
-                AppendToFile(remoteFilePath, memStream);
-            }
-
-            return remoteFilePath;
         }
 
-        public StorageFile Retrieve(string key) {
+        public override Uri Store(StorageFile file, Guid guid) {
+            if (!file.ContentType.Equals("text/csv")) {
+                throw new ArgumentException("content type must be text/csv");
+            }
+
+            // Create and open the upload and meta files
+            var uploadPath = this.UploadPath(guid);
+            var metaPath = this.MetaPath(guid);
+            this._fs.Create(this._client.AccountName, uploadPath);
+            this._fs.Create(this._client.AccountName, metaPath);
+
+            // Write the file
+            this._fs.ConcurrentAppend(this._client.AccountName, uploadPath, file.InputStream);
+
+            // Write the metadata
+            var json = JsonConvert.SerializeObject(new Meta {
+                Name = file.Name,
+                ContentType = file.ContentType
+            });
+
+            var metaStream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+            this._fs.Append(this._client.AccountName, metaPath, metaStream);
+            
+            return this.BuildUri(guid);
+        }
+
+        public override StorageFile Retrieve(Uri uri) {
+            this.AssertAccepts(uri);
+
             try {
-                if (!_adlsFileSystemClient.FileSystem.PathExists(_adlsAccountName, key)) {
-                    throw new KeyNotFoundException(string.Format("blob {0} does not exist", key.ToString()));
+                // Strip the leading slash from the URI's path to get the GUID
+                var guid = Guid.Parse(Path.GetFileNameWithoutExtension(uri.AbsolutePath));
+                var uploadPath = this.UploadPath(guid);
+                var metaPath = this.MetaPath(guid);
+
+                if (!this._fs.PathExists(this._client.AccountName, uploadPath) ||
+                    !this._fs.PathExists(this._client.AccountName, metaPath)) {
+                    throw new KeyNotFoundException(string.Format("file {0} does not exist", guid.ToString()));
                 } else {
-                    Stream stream = OpenStream(key);
-                    // Reasonable defaults if there's no type stored: use key as file name
-                    // and octet stream as content type                   
-                    return new StorageFile(stream, key, "application/octet-stream");
+                    var upload = this._fs.Open(this._client.AccountName, uploadPath);
+                    var meta = this._fs.Open(this._client.AccountName, metaPath);
+                    var metadata = this.ReadMeta(meta);
+
+                    return new StorageFile(upload, metadata.Name, metadata.ContentType);
                 }
-            } catch (Exception e) when (e is ArgumentNullException || e is FormatException) {
+            } catch (Exception e) when (e is ArgumentNullException || e is FormatException || e is JsonException) {
                 throw new ArgumentException(e.Message);
             }
         }
 
-        public ServiceClientCredentials AuthenticateAzure(
-        string domainName,
-        string nativeClientAppCLIENTID) {
-            // User login via interactive popup
-            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            // Use the client ID of an existing AAD "Native Client" application.
-            var activeDirectoryClientSettings = ActiveDirectoryClientSettings.UsePromptOnly(nativeClientAppCLIENTID, new Uri("urn:ietf:wg:oauth:2.0:oob"));
-            return UserTokenProvider.LoginWithPromptAsync(domainName, activeDirectoryClientSettings).Result;
-        }
+        public override ICollection<StorageFile> List() {
+            var ret = new List<StorageFile>();
+            var regex = new Regex(@"^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.json$");
+            var statuses = this._fs.ListFileStatus(this._client.AccountName, this._containerName);
+            foreach (var status in statuses.FileStatuses.FileStatus) {
+                try {
+                    var name = status.PathSuffix;
+                    if (status.Type == Microsoft.Azure.Management.DataLake.Store.Models.FileType.FILE) {
+                        var match = regex.Match(name);
+                        if (match.Success) {
+                            // This is the metadata file, and the prefix is the GUID.
+                            var guid = Guid.Parse(match.Groups[1].Value);
+                            var upload = this._fs.Open(this._client.AccountName, this.UploadPath(guid));
+                            var meta = this._fs.Open(this._client.AccountName, this.MetaPath(guid));
+                            var metadata = this.ReadMeta(meta);
 
-        public void SetupClients(ServiceClientCredentials tokenCreds, string subscriptionId) {
-            _adlaClient = new DataLakeAnalyticsAccountManagementClient(tokenCreds);
-            _adlaClient.SubscriptionId = subscriptionId;
-
-            _adlaJobClient = new DataLakeAnalyticsJobManagementClient(tokenCreds);
-
-            _adlsFileSystemClient = new DataLakeStoreFileSystemManagementClient(tokenCreds);
-        }
-
-        public void UploadFile(string srcFilePath, string destFilePath, bool force = true) {
-            var parameters = new UploadParameters(srcFilePath, destFilePath, _adlsAccountName, isOverwrite: force);
-            var frontend = new DataLakeStoreFrontEndAdapter(_adlsAccountName, _adlsFileSystemClient);
-            var uploader = new DataLakeStoreUploader(parameters, frontend);
-            uploader.Execute();
-        }
-
-        public Stream OpenStream(string guid) {
-            var stream = _adlsFileSystemClient.FileSystem.Open(_adlsAccountName, guid);
-            return stream;
-        }
-
-        // Helper function to show status and wait for user input
-        public void WaitForNewline(string reason, string nextAction = "") {
-            Console.WriteLine(reason + "\r\nPress ENTER to continue...");
-
-            Console.ReadLine();
-
-            if (!String.IsNullOrWhiteSpace(nextAction))
-                Console.WriteLine(nextAction);
-        }
-
-        // List all Data Lake Analytics accounts within the subscription
-        public List<DataLakeAnalyticsAccount> ListADLAAccounts() {
-            var response = _adlaClient.Account.List();
-            var accounts = new List<DataLakeAnalyticsAccount>(response);
-
-            while (response.NextPageLink != null) {
-                response = _adlaClient.Account.ListNext(response.NextPageLink);
-                accounts.AddRange(response);
+                            ret.Add(new StorageFile(upload, metadata.Name, metadata.ContentType));
+                        }
+                    }
+                } catch (Exception e) when (e is ArgumentException || e is FormatException || e is JsonException) {
+                    continue;
+                }
             }
+            return ret;
+        }
 
-            Console.WriteLine("You have %i Data Lake Analytics account(s).", accounts.Count);
-            for (int i = 0; i < accounts.Count; i++) {
-                Console.WriteLine(accounts[i].Name);
+        public override bool WillAccept(Uri uri) {
+            return uri.Scheme.Equals("adl") &&
+                   uri.Authority.Equals(this._authority);
+        }
+
+        public override Uri BuildUri(Guid guid) {
+            // adl://chumbucket.azuredatalake.net/{contaner}/{guid}.csv
+            var builder = new UriBuilder();
+            builder.Scheme = "adl";
+            builder.Host = this._authority;
+            builder.Path = string.Format("/{0}", this.UploadPath(guid));
+            return builder.Uri;
+        }
+
+        private string UploadPath(Guid guid) {
+            return string.Format("{0}.csv", Path.Combine(this._containerName, guid.ToString()));
+        }
+
+        private string MetaPath(Guid guid) {
+            return string.Format("{0}.json", Path.Combine(this._containerName, guid.ToString()));
+        }
+
+        private Meta ReadMeta(Stream stream) {
+            using (var metaReader = new StreamReader(stream)) {
+                var json = metaReader.ReadToEnd();
+                return JsonConvert.DeserializeObject<Meta>(json);
             }
-
-            return accounts;
         }
-
-        public Guid SubmitJobByPath(string scriptPath, string jobName) {
-            var script = File.ReadAllText(scriptPath);
-
-            var jobId = Guid.NewGuid();
-            var properties = new USqlJobProperties(script);
-            var parameters = new JobInformation(jobName, JobType.USql, properties, priority: 1, degreeOfParallelism: 1, jobId: jobId);
-            var jobInfo = _adlaJobClient.Job.Create(_adlaAccountName, jobId, parameters);
-
-            return jobId;
-        }
-
-        public JobResult WaitForJob(Guid jobId) {
-            var jobInfo = _adlaJobClient.Job.Get(_adlaAccountName, jobId);
-            while (jobInfo.State != JobState.Ended) {
-                jobInfo = _adlaJobClient.Job.Get(_adlaAccountName, jobId);
-            }
-            return jobInfo.Result.Value;
-        }
-
-        // Pulled from https://docs.microsoft.com/en-us/azure/data-lake-store/data-lake-store-get-started-net-sdk
-        public void AppendToFile(string path, Stream stream) {
-            _adlsFileSystemClient.FileSystem.Append(_adlsAccountName, path, stream);
-        }
-
     }
 }
