@@ -37,16 +37,54 @@
                 <footer>Plankton</footer>
             </blockquote>
             <br /><br />
-            <div class="form-group">
-                <label for="query">Enter your query below</label>
-                <textarea class="form-control" rows="5" id="query"></textarea>
-            </div>
-            <button class="btn btn-default" type="button" onclick="location.href = '@Url.Content("~/Content/FineUploader/uploader.html")'">Upload CSV</button>
-            <br /><br />
-            <button class="btn btn-default" id="submitButton" type="button" onclick="sendQuery()">Start Analysis</button>
-            <button class="btn btn-default" style="display:none" id="resultsButton" type="button" onclick="displayResults()">Results</button>
+            <div class="col-sm-3">&nbsp;</div>
         </div>
-        <div class="col-sm-3">&nbsp;</div>
+    </row>
+    <row>
+        <!-- BEGIN TODO: Consider moving this to a different part of the page to reduce whitespace -->
+        <div class="row">
+            <div class="col-sm-offset-2 col-sm-4">
+                <h3>CSV Upload</h3>
+                <div id="fine-uploader-manual-trigger"></div>
+                <br />
+
+                <script>
+                        var manualuploader = new qq.azure.FineUploader({
+                            element: document.getElementById("fine-uploader-manual-trigger"),
+                            template: 'qq-template-manual-trigger',
+                            request: {
+                                endpoint: 'https://chumbucket.blob.core.windows.net/files'
+                            },
+                            signature: {
+                                endpoint: '/file/sas'
+                            },
+                            uploadSuccess: {
+                                endpoint: '/file/success'
+                            },
+                            autoUpload: false,
+                            debug: true,
+                            validation: {
+                                allowedExtensions: ['csv'],
+                            },
+                            deleteFile: {
+                                enabled: true
+                            }
+                        });
+
+                        qq(document.getElementById("trigger-upload")).attach("click", function () {
+                            manualuploader.uploadStoredFiles();
+                        });
+                </script>
+            </div>
+            <div class="col-sm-4">
+                <h3>CSV Analysis</h3>
+                <div class="form-group">
+                    <textarea class="form-control" rows="5" id="query" placeholder="Enter your query here"></textarea>
+                </div>
+                <button class="btn btn-default" id="submitButton" type="button" onclick="sendQuery()">Start Analysis</button>
+                <button class="btn btn-default" style="display:none" id="resultsButton" type="button" onclick="displayResults()">Results</button>
+            </div>
+        </div>
     </row>
 </div>
 
