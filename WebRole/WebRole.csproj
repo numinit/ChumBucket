@@ -318,6 +318,7 @@
     <Compile Include="WebRole.cs" />
     <Content Include="Scripts\chumbucket-ext.js" />
     <Content Include="Scripts\chumbucket.js" />
+    <Content Include="Scripts\chumbucket\analysis_client.js" />
     <Content Include="Scripts\chumbucket\boot.js" />
     <Content Include="Scripts\chumbucket\http_client.js" />
     <Content Include="Scripts\fineuploader\azure.fine-uploader.js" />
