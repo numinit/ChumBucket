@@ -1,7 +1,5 @@
 ﻿chumbucket.HTTPClient = function (base) {
-    if (!base) {
-        base = '/';
-    }
+    base = base || '/';
     this._base = chumbucket.HTTPClient.stripTrailingSlashes(base);
 };
 
@@ -14,6 +12,7 @@ chumbucket.HTTPClient.makeAbsolute = function(base, uri) {
 };
 
 chumbucket.HTTPClient.prototype.get = function(uri, type) {
+    type = type || 'application/json';
     var xhr = new XMLHttpRequest();
     var promise = this.initXHR(xhr, uri, 'GET', type);
     xhr.send();
@@ -21,11 +20,12 @@ chumbucket.HTTPClient.prototype.get = function(uri, type) {
 };
 
 chumbucket.HTTPClient.prototype.post = function(uri, data, type) {
+    type = type || 'application/json';
     var xhr = new XMLHttpRequest();
     var promise = this.initXHR(xhr, uri, 'POST', type);
-    xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-    xhr.setRequestHeader('Accept', 'application/json');
-    xhr.send(JSON.stringify(data));
+    xhr.setRequestHeader('Content-Type', type + '; charset=UTF-8');
+    xhr.setRequestHeader('Accept', type);
+    xhr.send(type === 'application/json' ? JSON.stringify(data) : data);
     return promise;
 };
 
@@ -35,7 +35,6 @@ chumbucket.HTTPClient.prototype.makeAbsolute = function(uri) {
 
 chumbucket.HTTPClient.prototype.initXHR = function(xhr, uri, method, type) {
     var ref = this;
-    type = type || 'json';
     return new Promise(function(resolve, reject) {
         xhr.open(method, ref.makeAbsolute(uri), true);
         xhr.setRequestHeader('X-Requested-With', 'chumbucket/0.1');
@@ -44,7 +43,12 @@ chumbucket.HTTPClient.prototype.initXHR = function(xhr, uri, method, type) {
                 return;
             }
 
-            var response = new chumbucket.HTTPClient.Response(xhr.status, xhr.statusText, xhr.response, type === 'json');
+            var response = new chumbucket.HTTPClient.Response(
+                xhr.status,
+                xhr.statusText,
+                xhr.response,
+                type === 'application/json'
+            );
             if (response.isSuccess()) {
                 resolve(response);
             } else {
