@@ -15,6 +15,10 @@ namespace ChumBucket.Util {
         private CloudBlobContainer _blobContainer;
         private string _authority;
 
+        public CloudStorageAccount StorageAccount {
+            get { return this._storageAccount; }
+        }
+
         public BlobStorageAdapter(string connectionString, string containerName) {
             this._storageAccount = CloudStorageAccount.Parse(connectionString);
             this._blobClient = this._storageAccount.CreateCloudBlobClient();

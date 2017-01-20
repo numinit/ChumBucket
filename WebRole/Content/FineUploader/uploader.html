@@ -87,11 +87,10 @@
 <body>
     <div id="uploader"></div>
     <script>
-        // Some options to pass to the uploader are discussed on the next page
         var uploader = new qq.azure.FineUploader({
             element: document.getElementById('uploader'),
             request: {
-                endpoint: 'https://{BLOB NAME}.blob.core.windows.net/{CONTAINER NAME}'
+                endpoint: 'https://chumbucket.blob.core.windows.net/files'
             },
             signature: {
                 endpoint: '/file/sas'

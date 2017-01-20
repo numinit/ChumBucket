@@ -14,11 +14,12 @@ using Microsoft.WindowsAzure.Storage.Shared.Protocol;
 using ChumBucket.Util;
 using WebRole;
 using System.Globalization;
+using System.Text;
 
 namespace ChumBucket.Controllers {
     [RoutePrefix("file")]
     public class FileController : Controller {
-        private StorageAdapter _blobAdapter = AzureConfig.BLOB_STORAGE;
+        private BlobStorageAdapter _blobAdapter = AzureConfig.BLOB_STORAGE;
         private DLStorageAdapter _dataLakeAdapter = AzureConfig.DL_UPLOAD;
 
         [HttpPost]
@@ -34,13 +35,19 @@ namespace ChumBucket.Controllers {
                 // Store the file
                 var name = Path.GetFileName(postedFile.FileName);
                 var file = new StorageFile(postedFile.InputStream, name, postedFile.ContentType);
+                var startTime = DateTime.UtcNow;
                 var uri = adapter.Store(file);
+                var duration = DateTime.UtcNow.Subtract(startTime).Milliseconds;
+                var transferRate = postedFile.ContentLength / (duration / 1000.0);
 
                 // Created
                 Response.StatusCode = 201;
                 return Json(new {
                     result = new {
-                        uri = uri.ToString()
+                        uri = uri.ToString(),
+                        startTime = startTime.ToString("o"),
+                        durationMs = duration,
+                        transferRate = transferRate
                     }
                 });
             } catch (ArgumentException e) {
@@ -78,56 +85,70 @@ namespace ChumBucket.Controllers {
 
         [HttpGet]
         [Route("sas")]
-        public ActionResult Sas()
-        {
-            const string STORAGE_ACCOUNT_NAME = "ACCOUNT NAME";
-            const string STORAGE_ACCOUNT_KEY = "ACCOUNT KEY";
-            var accountAndKey = new StorageCredentials(STORAGE_ACCOUNT_NAME, STORAGE_ACCOUNT_KEY);
-            var blobUri = Request.QueryString.Get("bloburi");
-            var verb = Request.QueryString.Get("_method");
+        public ActionResult Sas() {
+            try {
+                System.Diagnostics.Debug.WriteLine(Request.QueryString["bloburi"]);
+                var blobUri = new Uri(Request.QueryString["bloburi"]);
+                var verb = Request.QueryString["_method"];
 
-            var sas = getSasForBlob(accountAndKey, blobUri, verb);
-
-            byte[] buffer = System.Text.Encoding.UTF8.GetBytes(sas);
-            Response.StatusCode = 200;
-            //Response.ContentLength64 = buffer.Length;
-            System.IO.Stream output = Response.OutputStream;
-            output.Write(buffer, 0, buffer.Length);
-            output.Close();
-            return new HttpStatusCodeResult(200);
+                var sas = this.GetSasForBlob(blobUri, verb);
+                return new FileStreamResult(
+                    new MemoryStream(Encoding.UTF8.GetBytes(sas)),
+                    "application/octet-stream"
+                );
+            } catch (Exception e) when (e is ArgumentException || e is FormatException) {
+                // Bad request
+                Response.StatusCode = 400;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         [HttpPost]
         [Route("success")]
-        public ActionResult Success()
-        {
-            return new HttpStatusCodeResult(200);
+        public ActionResult Success() {
+            try {
+                var blobName = Request.Form["blob"];
+                var fileName = Request.Form["name"];
+                var guid = Guid.Parse(Request.Form["uuid"]);
+                var container = Request.Form["container"];
+
+                // Build a URI to the file
+                var uri = this._blobAdapter.BuildUri(guid);
+
+
+                return new HttpStatusCodeResult(200);
+            } catch (Exception e) when (e is ArgumentException || e is FormatException) {
+                Response.StatusCode = 400;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
         }
 
-        private static String getSasForBlob(StorageCredentials credentials, String blobUri, String verb)
-        {
-            CloudBlockBlob blob = new CloudBlockBlob(new Uri(blobUri), credentials);
+        private string GetSasForBlob(Uri blobUri, string verb) {
+            var credentials = this._blobAdapter.StorageAccount.Credentials;
+            var blob = new CloudBlockBlob(blobUri, credentials);
             var permission = SharedAccessBlobPermissions.Write;
 
-            if (verb == "DELETE")
-            {
+            if (verb == "DELETE") {
                 permission = SharedAccessBlobPermissions.Delete;
             }
 
-            var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy()
-            {
-
+            // Expire their token after 15 minutes
+            var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy() {
                 Permissions = permission,
                 SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15),
             });
 
-            return string.Format(CultureInfo.InvariantCulture, "{0}{1}", blob.Uri, sas);
+            return string.Format("{0}{1}", blob.Uri, sas);
         }
 
         private StorageAdapter SchemeToAdapter(string scheme) {
-            if (scheme == null || scheme.Equals("wasb")) {
+            if (scheme == null || scheme == "wasb") {
                 return this._blobAdapter;
-            } else if (scheme.Equals("adl")) {
+            } else if (scheme == "adl") {
                 return this._dataLakeAdapter;
             } else {
                 throw new ArgumentException("invalid scheme");

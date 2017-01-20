@@ -113,7 +113,7 @@ namespace WebRole.Controllers {
                     Response.StatusCode = 200;
                     return new FileStreamResult(file.InputStream, file.ContentType);
                 } else {
-                    throw new KeyNotFoundException("job is still in progress");
+                    throw new KeyNotFoundException("job is unfinished");
                 }
             } catch (Exception e) when (e is ArgumentException || e is FormatException || e is JsonException) {
                 // Bad request
