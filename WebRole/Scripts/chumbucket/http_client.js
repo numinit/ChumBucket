@@ -1,4 +1,4 @@
-﻿chumbucket.HTTPClient = function (base) {
+﻿chumbucket.HTTPClient = function(base) {
     base = base || '/';
     this._base = chumbucket.HTTPClient.stripTrailingSlashes(base);
 };
@@ -11,9 +11,34 @@ chumbucket.HTTPClient.makeAbsolute = function(base, uri) {
     return [chumbucket.HTTPClient.stripTrailingSlashes(base), uri.replace(/^\/+/g, '')].join('/');
 };
 
-chumbucket.HTTPClient.prototype.get = function(uri, type) {
+chumbucket.HTTPClient.prototype.get = function(uri, type, query) {
     type = type || 'application/json';
+    query = query || {};
+
     var xhr = new XMLHttpRequest();
+    var keys = Object.keys(query);
+
+    // Build the query string
+    if (keys.length > 0) {
+        uri += '?';
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var value = query[key];
+            if (!Array.isArray(value)) {
+                value = [value];
+            }
+
+            for (var j = 0; j < value.length; j++) {
+                uri += encodeURIComponent(key);
+                uri += '=';
+                uri += encodeURIComponent('' + value[j]);
+                if (j < value.length - 1) {
+                    uri += '&';
+                }
+            }
+        }
+    }
+
     var promise = this.initXHR(xhr, uri, 'GET', type);
     xhr.send();
     return promise;

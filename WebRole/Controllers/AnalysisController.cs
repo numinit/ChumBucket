@@ -138,10 +138,10 @@ namespace WebRole.Controllers {
             int duration = 0;
             if (state == JobState.Ended) {
                 statusString = info.Result.ToString().ToUpper();
-                duration = (int)Math.Round(info.EndTime.Value.Subtract(startTime).TotalMilliseconds);
+                duration = info.EndTime.Value.Subtract(startTime).Milliseconds;
             } else {
                 statusString = state.ToString().ToUpper();
-                duration = (int)Math.Round(DateTimeOffset.Now.Subtract(startTime).TotalMilliseconds);
+                duration = DateTimeOffset.Now.Subtract(startTime).Milliseconds;
             }
 
             if (info.Result != JobResult.Failed) {
