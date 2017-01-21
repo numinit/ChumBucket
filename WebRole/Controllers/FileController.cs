@@ -15,6 +15,7 @@ using ChumBucket.Util;
 using WebRole;
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ChumBucket.Controllers {
     [RoutePrefix("file")]
@@ -26,21 +27,24 @@ namespace ChumBucket.Controllers {
         [Route("submit")]
         public ActionResult Submit() {
             try {
-                var adapter = this.SchemeToAdapter(Request.Form["scheme"]);
+                var bucket = this.NormalizeBucketName(Request.Form["bucket"]);
                 var postedFile = Request.Files["upload"];
                 if (postedFile == null) {
                     throw new ArgumentException("no file provided");
                 }
 
-                // Store the file
+                // Generate a file to store
                 var name = Path.GetFileName(postedFile.FileName);
-                var file = new StorageFile(postedFile.InputStream, name, postedFile.ContentType);
+                var uri = new BlobStorageEntityUri(bucket: bucket, key: name);
+                var file = new StorageFile(postedFile.InputStream, uri, postedFile.ContentType);
+
+                // Store the file
                 var startTime = DateTime.UtcNow;
-                var uri = adapter.Store(file);
+                this._blobAdapter.Store(file, bucket);
                 var duration = DateTime.UtcNow.Subtract(startTime).Milliseconds;
                 var transferRate = postedFile.ContentLength / (duration / 1000.0);
 
-                // Created
+                // Done
                 Response.StatusCode = 201;
                 return Json(new {
                     result = new {
@@ -64,7 +68,7 @@ namespace ChumBucket.Controllers {
         public ActionResult Query() {
             try {
                 // /query?uri={uri}
-                Uri uri = new Uri(Request.QueryString["uri"]);
+                var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
                 StorageFile file = this.SchemeToAdapter(uri.Scheme).Retrieve(uri);
                 Response.StatusCode = 200;
                 return new FileStreamResult(file.InputStream, file.ContentType);
@@ -145,7 +149,20 @@ namespace ChumBucket.Controllers {
             return string.Format("{0}{1}", blob.Uri, sas);
         }
 
-        private StorageAdapter SchemeToAdapter(string scheme) {
+        /* Bucket names must start with a letter */
+        static Regex BUCKET_NAME_REGEX = new Regex(@"^[a-z][a-z0-9_\-]*$");
+
+        private string NormalizeBucketName(string name) {
+            var lowerName = name.ToLowerInvariant();
+            var match = BUCKET_NAME_REGEX.Match(lowerName);
+            if (match.Success) {
+                return lowerName;
+            } else {
+                throw new ArgumentException("invalid bucket name");
+            }
+        }
+
+        private IStorageAdapter SchemeToAdapter(string scheme) {
             if (scheme == null || scheme == "wasb") {
                 return this._blobAdapter;
             } else if (scheme == "adl") {

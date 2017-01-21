@@ -7,19 +7,15 @@ using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
-using WebRole.Util;
 
 namespace WebRole.Controllers {
     [RoutePrefix("analysis")]
     public class AnalysisController : Controller {
-        private StorageAdapter _upload = AzureConfig.DL_UPLOAD;
-        private StorageAdapter _result = AzureConfig.DL_RESULT;
+        private IStorageAdapter _upload = AzureConfig.DL_UPLOAD;
+        private IStorageAdapter _result = AzureConfig.DL_RESULT;
         private DLJobAdapter _job = AzureConfig.DL_JOB;
 
         private class SubmitRequest {
-            [JsonProperty("uri")]
-            public string Uri { get; set; }
-
             [JsonProperty("name")]
             public string Name { get; set; }
 
@@ -36,8 +32,6 @@ namespace WebRole.Controllers {
 
             [JsonProperty("durationMs")]
             public int Duration { get; set; }
-
-
 
             [JsonProperty("result")]
             public string Result { get; set; }
@@ -61,7 +55,7 @@ namespace WebRole.Controllers {
                 if (request == null) {
                     throw new ArgumentException("invalid request");
                 }
-                var jobUri = this._job.SubmitJob(request.Name, new Uri(request.Uri), request.Code);
+                var jobUri = this._job.SubmitJob(request.Name, request.Code);
 
                 Response.StatusCode = 201;
                 return Json(new {
@@ -82,7 +76,7 @@ namespace WebRole.Controllers {
         [Route("status")]
         public ActionResult Status() {
             try {
-                var uri = new Uri(Request.QueryString["uri"]);
+                var uri = new JobEntityUri(uri: Request.QueryString["uri"]);
                 var job = this._job.GetJobInfo(uri);
 
                 Response.StatusCode = 200;
@@ -106,7 +100,7 @@ namespace WebRole.Controllers {
         [Route("result")]
         public ActionResult Result() {
             try {
-                Uri uri = new Uri(Request.QueryString["uri"]);
+                var uri = new JobEntityUri(uri: Request.QueryString["uri"]);
                 var job = this._job.GetJobInfo(uri);
                 if (job.Result == JobResult.Succeeded) {
                     var file = this._job.GetJobResult(uri);

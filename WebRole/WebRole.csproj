@@ -308,12 +308,17 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Util\BlobStorageAdapter.cs" />
+    <Compile Include="Util\BlobStorageUriFactory.cs" />
     <Compile Include="Util\DLClient.cs" />
     <Compile Include="Util\DLJobAdapter.cs" />
     <Compile Include="Util\DLStorageAdapter.cs" />
-    <Compile Include="Util\StorageAdapter.cs" />
+    <Compile Include="Util\DLStorageUriFactory.cs" />
+    <Compile Include="Util\EntityUri.cs" />
+    <Compile Include="Util\IDirectUriFactory.cs" />
+    <Compile Include="Util\IStorageAdapter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Startup.cs" />
+    <Compile Include="Util\StorageFile.cs" />
     <Compile Include="WebRole.cs" />
     <Content Include="Scripts\chumbucket-ext.js" />
     <Content Include="Scripts\chumbucket.js" />

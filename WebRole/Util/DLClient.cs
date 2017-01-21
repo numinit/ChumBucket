@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Web;
 
-namespace WebRole.Util {
+namespace ChumBucket.Util {
     public class DLClient {
         private string _accountName;
         private ServiceClientCredentials _creds;
