@@ -109,14 +109,15 @@ namespace ChumBucket.Controllers {
         [Route("success")]
         public ActionResult Success() {
             try {
-                var blobName = Request.Form["blob"];
-                var fileName = Request.Form["name"];
-                var guid = Guid.Parse(Request.Form["uuid"]);
-                var container = Request.Form["container"];
+                //var blobName = Request.Form["blob"];
+                //var fileName = Request.Form["name"];
+                //var guid = Guid.Parse(Request.Form["uuid"]);
+                //var container = Request.Form["container"];
 
-                // Build a URI to the file
-                var uri = this._blobAdapter.BuildUri(guid);
+                //// Build a URI to the file
+                //var uri = this._blobAdapter.BuildUri(guid);
 
+                //System.Diagnostics.Debug.WriteLine();
 
                 return new HttpStatusCodeResult(200);
             } catch (Exception e) when (e is ArgumentException || e is FormatException) {

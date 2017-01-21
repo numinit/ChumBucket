@@ -52,6 +52,15 @@
                         var manualuploader = new qq.azure.FineUploader({
                             element: document.getElementById("fine-uploader-manual-trigger"),
                             template: 'qq-template-manual-trigger',
+                            blobProperties: {
+                                name: 'filename'
+                                    //function (filename) {
+                                    //return new Promise(
+                                    //    function(resolve) {
+                                    //         resolve(filename);
+                                    //    });
+                                    //}
+                            },
                             request: {
                                 endpoint: 'https://chumbucket.blob.core.windows.net/files'
                             },
