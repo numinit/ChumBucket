@@ -45,9 +45,12 @@
         <div class="row">
             <div class="col-sm-offset-2 col-sm-4">
                 <h3>CSV Upload</h3>
+                <div>
+                    <label for="example-text-input" class="col-form-label">Bucket name:</label>
+                    <input class="form-control" type="text" value="default" id="bucketName">
+                </div>
                 <div id="fine-uploader-manual-trigger"></div>
                 <br />
-
                 <script>
                     (function () {
                         var startTime = {};
@@ -57,10 +60,15 @@
                             element: document.getElementById("fine-uploader-manual-trigger"),
                             template: 'qq-template-manual-trigger',
                             blobProperties: {
-                                name: 'filename'
+                                name: function (id) {
+                                    return new Promise(
+                                        function (resolve) {
+                                            resolve(document.getElementById("bucketName").value + "/" + uploader.getName(id));
+                                        });
+                                }
                             },
                             request: {
-                                endpoint: 'https://chumbucket.blob.core.windows.net/files'
+                                endpoint: 'https://teamastorage.blob.core.windows.net/files'
                             },
                             signature: {
                                 endpoint: '/file/sas'
@@ -113,6 +121,7 @@
             </div>
             <div class="col-sm-4">
                 <h3>CSV Analysis</h3>
+                <br />
                 <div class="form-group">
                     <textarea class="form-control" rows="5" id="query" placeholder="Enter your query here"></textarea>
                 </div>
