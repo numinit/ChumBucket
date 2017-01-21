@@ -11,8 +11,7 @@ namespace WebRole {
     public sealed class AzureConfig {
         public static BlobStorageAdapter BLOB_STORAGE;
         public static DLClient DL;
-        public static DLStorageAdapter DL_UPLOAD;
-        public static DLStorageAdapter DL_RESULT;
+        public static DLStorageAdapter DL_JOB_STORAGE;
         public static DLJobAdapter DL_JOB;
 
         public static void CreateClients() {
