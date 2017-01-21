@@ -1,15 +1,20 @@
 ﻿var chumbucket = (this['chumbucket'] = this['chumbucket'] || {});
 
-chumbucket['boot'] = function(document) {
+chumbucket['boot'] = function(document, options) {
+    options = options || {};
     if (chumbucket.booted_) {
         return;
     }
-    chumbucket.onBoot(document);
+    chumbucket.onBoot(document, options);
     chumbucket.booted_ = true;
 };
 
-chumbucket.onBoot = function(document) {
-    var uploader = new chumbucket.Uploader(document, { 'rootElement': '#upload', 'timingTable': '#upload-timing' });
+chumbucket.onBoot = function(document, options) {
+    var uploader = new chumbucket.Uploader(document, {
+        'uploadEndpoint': options['uploadEndpoint'],
+        'rootElement': '#upload',
+        'timingTable': '#upload-timing'
+    });
     var uploadButton = document.querySelector('#upload-submit');
     uploadButton.addEventListener('click', function(ev) {
         var bucketName = document.querySelector('#bucket-name').value || '';
@@ -48,7 +53,7 @@ chumbucket.onBoot = function(document) {
 
         analysisClient.submitAndPoll(analysisJobName, analysisCode, function(state, result) {
             var analysisStatus = document.querySelector('#analysis-status');
-            var analysisString = state.split(/_+/).map(function(s) {
+            var analysisString = state.split(/_+/g).map(function(s) {
                 return s[0].toUpperCase() + s.slice(1).toLowerCase()
             }).join(' ');
             analysisStatus.textContent = analysisString;

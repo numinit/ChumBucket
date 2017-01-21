@@ -1,12 +1,12 @@
 ﻿chumbucket.Uploader = function(document, options) {
     options = options || {};
 
+    this._uploadEndpoint = options['uploadEndpoint'];
     this._rootElement = document.querySelector(options['rootElement']);
     this._timingTable = document.querySelector(options['timingTable']);
     this._templateClass = options['templateClass'] || 'qq-template-manual-trigger';
 
-    var startTimes = {}, endTimes = {}, deltaTimes = {};
-    var bucketNames = {};
+    var startTimes = {}, endTimes = {}, deltaTimes = {}, bucketNames = {};
 
     var ref = this;
     var config = {
@@ -22,7 +22,7 @@
             }
         },
         request: {
-            endpoint: 'https://chumbucket.blob.core.windows.net/files',
+            endpoint: ref.getUploadEndpoint(),
         },
         signature: {
             endpoint: '/file/sas'
@@ -86,6 +86,10 @@
 chumbucket.Uploader.prototype.startUpload = function(bucketName) {
     this._currentBucket = bucketName;
     this._uploader.uploadStoredFiles();
+};
+
+chumbucket.Uploader.prototype.getUploadEndpoint = function() {
+    return this._uploadEndpoint.replace(/\/+$/g, '');
 };
 
 chumbucket.Uploader.prototype.getCurrentBucket = function() {

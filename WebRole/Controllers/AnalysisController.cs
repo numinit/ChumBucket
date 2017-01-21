@@ -132,10 +132,10 @@ namespace WebRole.Controllers {
             int duration = 0;
             if (state == JobState.Ended) {
                 statusString = info.Result.ToString().ToUpper();
-                duration = info.EndTime.Value.Subtract(startTime).Milliseconds;
+                duration = (int)Math.Round(info.EndTime.Value.Subtract(startTime).TotalMilliseconds);
             } else {
                 statusString = state.ToString().ToUpper();
-                duration = DateTimeOffset.Now.Subtract(startTime).Milliseconds;
+                duration = (int)Math.Round(DateTimeOffset.Now.Subtract(startTime).TotalMilliseconds);
             }
 
             if (info.Result != JobResult.Failed) {
@@ -156,7 +156,7 @@ namespace WebRole.Controllers {
                     result = new {
                         status = statusString,
                         startTime = startTimeString,
-                        duration = duration,
+                        durationMs = duration,
                         errorMessages = errorMessages
                     }
                 }, JsonRequestBehavior.AllowGet);

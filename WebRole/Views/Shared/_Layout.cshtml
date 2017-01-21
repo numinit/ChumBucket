@@ -14,6 +14,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="author" content="COMP410" />
+    <meta name="uploadEndpoint" content="@(AzureConfig.BLOB_STORAGE.GetRootUri())" />
     <title>Chum Bucket</title>
 
     <link href="https://fonts.googleapis.com/css?family=Lato:100,300|Share+Tech+Mono" rel="stylesheet" />
@@ -84,7 +85,8 @@
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function() {
-        chumbucket.boot(document);
+        var uploadEndpoint = document.querySelector('meta[name="uploadEndpoint"]').content;
+        chumbucket.boot(document, { 'uploadEndpoint': uploadEndpoint });
     });
 </script>
 

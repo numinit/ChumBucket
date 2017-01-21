@@ -108,6 +108,10 @@ namespace ChumBucket.Util {
             return entityUri;
         }
 
+        public Uri GetRootUri() {
+            return this._factory.BuildDirectHttpsUri("");
+        }
+
         /**
          * Returns a direct SAS (shared access signature) for a given URI.
          * If there is an issue with the given blob URI, throws a SecurityException.
