@@ -1,156 +1,46 @@
-    <!--Page Header-->
-<nav class="navbar navbar-default">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#topNavbar">
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand" href="/" title="Chum Bucket Home page">
-                <img src="@Url.Content("~/Content/images/ChumBucket.svg")" style="width: 40px;">
-            </a>
-            <a class="navbar-brand" href="/" title="Chum Bucket Home Page">Chum Bucket</a>
-        </div>
-        <div class="collapse navbar-collapse" id="topNavbar">
-            <ul class="nav navbar-nav navbar-right">
-                <li><a href="http://www.bandgap.cs.rice.edu/classes/comp410/default.aspx" title="COMP 410" target="_blank">COMP 410</a></li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
-<div class="container-fluid text-center bodySection">
+<div class="row">
+    <!-- BEGIN TODO: Consider moving this to a different part of the page to reduce whitespace -->
     <div class="row">
-        <div class="col-sm-2">&nbsp;</div>
-        <div class="col-sm-8">
-            <img src="@Url.Content("~/Content/images/ChumBucket.svg")" style="height: 200px;" alt="ChumBucket" />
-            <h1>Chum Bucket</h1>
-        </div>
-        <div class="col-sm-2">&nbsp;</div>
-    </div>
-    <div class="row">
-        <div class="col-sm-3">&nbsp;</div>
-        <div class="col-sm-6">
-            <blockquote>
-                <p>Goodbye everyone, I'll remember you all in therapy.</p>
-                <footer>Plankton</footer>
-            </blockquote>
-            <br /><br />
-            <div class="col-sm-3">&nbsp;</div>
-        </div>
-    </div>
-    <div class="row">
-        <!-- BEGIN TODO: Consider moving this to a different part of the page to reduce whitespace -->
-        <div class="row">
-            <div class="col-sm-offset-2 col-sm-4">
-                <h3>CSV Upload</h3>
-                <div>
-                    <label for="example-text-input" class="col-form-label">Bucket name:</label>
-                    <input class="form-control" type="text" value="default" id="bucketName">
-                </div>
-                <div id="fine-uploader-manual-trigger"></div>
-                <br />
-                <script>
-                    (function () {
-                        var startTime = {};
-                        var endTime = {};
-                        var deltaTime = {};
-                        var bucketName = {};
-                        var uploader = new qq.azure.FineUploader({
-                            element: document.getElementById("fine-uploader-manual-trigger"),
-                            template: 'qq-template-manual-trigger',
-                            blobProperties: {
-                                name: function (id) {
-                                    return new Promise(
-                                        function (resolve) {
-                                            resolve(document.getElementById("bucketName").value + "/" + uploader.getName(id));
-                                            bucketName[uploader.getName(id)] = document.getElementById("bucketName")
-                                                .value;
-                                        });
-                                }
-                            },
-                            request: {
-                                endpoint: 'https://teamastorage.blob.core.windows.net/files'
-                            },
-                            signature: {
-                                endpoint: '/file/sas'
-                            },
-                            uploadSuccess: {
-                                endpoint: '/file/success'
-                            },
-                            autoUpload: false,
-                            debug: true,
-                            validation: {
-                                allowedExtensions: ['csv'],
-                            },
-                            deleteFile: {
-                                enabled: true
-                            },
-                            callbacks: {
-                                onUpload: function(fileId, name) {
-                                    // Record the start time for submission
-                                    startTime[name] = new Date();
-                                    console.log(startTime);
-                                },
-                                onComplete: function(fileId, name) {
-                                    // Record the end time for submission
-                                    endTime[name] = new Date();
-                                    deltaTime[name] = (endTime[name].getTime() - startTime[name].getTime()) / 1000;
-                                    console.log(endTime[name]);
-                                    console.log(deltaTime[name]);
-                                    // Indicate the delta time on a DOM element
-                                    var timingTable = document.getElementById("timing-table");
-                                    var newRow = timingTable.insertRow(1);
-                                    newRow.id = "file-" + name;
-                                    // Add three cells and provide their values
-                                    var cell1 = newRow.insertCell(0);
-                                    var cell2 = newRow.insertCell(1);
-                                    var cell3 = newRow.insertCell(2);
-                                    cell1.innerHTML = bucketName[name] + "/" + name;
-                                    cell2.innerHTML = "Complete";
-                                    cell3.innerHTML = deltaTime[name] + " seconds";
-                                }
-                            }
-                        });
-
-                        qq(document.getElementById("trigger-upload")).attach("click",
-                            function() {
-                                uploader.uploadStoredFiles();
-                            }
-                        );
-                    })();
-                </script>
+        <div class="col-sm-offset-2 col-sm-4">
+            <h3>CSV Upload</h3>
+            <div>
+                <label for="example-text-input" class="col-form-label">Bucket name:</label>
+                <input class="form-control" type="text" value="default" id="bucket-name"></input>
             </div>
-            <div class="col-sm-4">
-                <h3>CSV Analysis</h3>
-                <br />
-                <div class="form-group">
-                    <textarea class="form-control" rows="5" id="query" placeholder="Enter your query here"></textarea>
-                </div>
-                <button class="btn btn-default" id="submitButton" type="button" onclick="sendQuery()">Start Analysis</button>
-                <button class="btn btn-default" style="display:none" id="resultsButton" type="button" onclick="displayResults()">Results</button>
-            </div>
+            <div id="uploader"></div>
+            <br />
         </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-offset-3 col-sm-6">
-            <table id="timing-table" class="table">
-                <tr>
-                    <th>Filename</th>
-                    <th>Status</th>
-                    <th>Upload Time</th>
-                </tr>
-            </table>
+        <div class="col-sm-4">
+            <h3>CSV Analysis</h3>
+            <br />
+            <div class="form-group">
+                <textarea class="form-control" rows="5" id="query" placeholder="Enter your query here"></textarea>
+            </div>
+            <button class="btn btn-default" id="submitButton" type="button" onclick="sendQuery()">Start Analysis</button>
+            <button class="btn btn-default" style="display:none" id="resultsButton" type="button" onclick="displayResults()">Results</button>
         </div>
     </div>
 </div>
-
-<!-- Page Footer -->
-<div class="container-fluid text-center" style="padding:10px 0px;">
-    <div class="row">
-        <div class="col-xs-12">
-            <p style="margin:0px;">Copyright © Comp 410, 2017. All rights reserved.</p>
-        </div>
+<div class="row">
+    <div class="col-sm-offset-3 col-sm-6">
+        <table id="timing-table" class="table">
+            <tr>
+                <th>Filename</th>
+                <th>Status</th>
+                <th>Upload Time</th>
+            </tr>
+        </table>
     </div>
 </div>
+
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', function() {
+        var uploader = new chumbucket.Uploader(document, { 'rootElement': '#uploader', 'timingTable': '#timing-table' });
+        var button = document.querySelector('#trigger-upload');
+        button.addEventListener('click', function(ev) {
+            var bucketName = document.querySelector('#bucket-name').value;
+            uploader.startUpload(bucketName);
+        });
+    });
+</script>

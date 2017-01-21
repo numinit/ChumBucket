@@ -325,8 +325,8 @@
     <Content Include="Scripts\chumbucket\analysis_client.js" />
     <Content Include="Scripts\chumbucket\boot.js" />
     <Content Include="Scripts\chumbucket\http_client.js" />
+    <Content Include="Scripts\chumbucket\uploader.js" />
     <Content Include="Scripts\fineuploader\azure.fine-uploader.js" />
-    <Content Include="Content\js\Layout.js" />
     <Content Include="packages.config">
       <SubType>Designer</SubType>
     </Content>
@@ -344,7 +344,6 @@
     <Content Include="Stylesheets\chumbucket.css" />
     <Content Include="Stylesheets\chumbucket\LightTheme.css" />
     <Content Include="Stylesheets\chumbucket\Master.css" />
-    <Content Include="Content\FineUploader\uploader.html" />
     <Content Include="Content\images\ChumBucket.svg" />
     <Content Include="Content\images\gearsDark.svg" />
     <Content Include="Content\images\gearsLight.svg" />
@@ -374,6 +373,9 @@
     <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.ttf" />
     <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.woff" />
     <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.woff2" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="App_Start\AzureConfig.cs.example" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

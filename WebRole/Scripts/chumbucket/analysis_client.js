@@ -2,7 +2,7 @@
     this._http = http;
 };
 
-chumbucket.AnalysisClient.prototype.submitAndPoll = function(uri, name, code, statusCallback, interval) {
+chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusCallback, interval) {
     interval = interval || 5000;
 
     var onFailure = function(error) {
@@ -47,11 +47,11 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(uri, name, code, st
         }, interval);
     };
 
-    this.submit(uri, name, code).then(onSubmitSuccess, onFailure);
+    this.submit(name, code).then(onSubmitSuccess, onFailure);
 };
 
-chumbucket.AnalysisClient.prototype.submit = function(uri, name, code) {
-    var params = {'uri': uri, 'name': name, 'code': code};
+chumbucket.AnalysisClient.prototype.submit = function(name, code) {
+    var params = {'name': name, 'code': code};
     return this._http.post('analysis/submit', params);
 };
 

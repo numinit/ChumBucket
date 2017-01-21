@@ -95,9 +95,9 @@ namespace ChumBucket.Controllers {
                 var blobUri = new Uri(Request.QueryString["bloburi"]);
                 var verb = Request.QueryString["_method"];
 
-                var sas = this.GetSasForBlob(blobUri, verb);
+                var sasUri = this._blobAdapter.GetSasForBlob(blobUri);
                 return new FileStreamResult(
-                    new MemoryStream(Encoding.UTF8.GetBytes(sas)),
+                    new MemoryStream(Encoding.UTF8.GetBytes(sasUri.ToString())),
                     "application/octet-stream"
                 );
             } catch (Exception e) when (e is ArgumentException || e is FormatException) {
@@ -130,24 +130,6 @@ namespace ChumBucket.Controllers {
                     error = e.Message
                 }, JsonRequestBehavior.AllowGet);
             }
-        }
-
-        private string GetSasForBlob(Uri blobUri, string verb) {
-            var credentials = this._blobAdapter.StorageAccount.Credentials;
-            var blob = new CloudBlockBlob(blobUri, credentials);
-            var permission = SharedAccessBlobPermissions.Write;
-
-            if (verb == "DELETE") {
-                permission = SharedAccessBlobPermissions.Delete;
-            }
-
-            // Expire their token after 15 minutes
-            var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy() {
-                Permissions = permission,
-                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(15),
-            });
-
-            return string.Format("{0}{1}", blob.Uri, sas);
         }
 
         /* Bucket names must start with a letter */

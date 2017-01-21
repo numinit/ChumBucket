@@ -83,5 +83,19 @@ namespace ChumBucket.Util {
             }
             return list;
         }
+
+        public Uri GetSasForBlob(Uri blobUri, int expirationMins = 15) {
+            var credentials = this._storageAccount.Credentials;
+            var blob = new CloudBlockBlob(blobUri, credentials);
+            var permission = SharedAccessBlobPermissions.Write;
+
+            // Expire their token after 15 minutes
+            var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy() {
+                Permissions = permission,
+                SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(expirationMins),
+            });
+
+            return new Uri(string.Format("{0}{1}", blobUri, sas));
+        }
     }
 }

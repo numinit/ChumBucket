@@ -30,14 +30,13 @@ namespace WebRole {
             var domain = "[ACTIVE DIRECTORY PRIMARY DOMAIN]";
 
             // Simple configuration. Creates a Blob storage adapter storing blobs in
-            // a "files" directory, and two Data Lake storage adapters rooted at
-            // "upload" and "result" for uploads and results.
+            // a "files" directory, and a Data Lake storage adapters rooted at
+            // "result" for results.
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-            AzureConfig.BLOB_STORAGE = new BlobStorageAdapter(blobStorageConnectionString, "files");
-            AzureConfig.DL = new DLClient(dlAccountName, secret, subId, clientId, domain);
-            AzureConfig.DL_UPLOAD = new DLStorageAdapter(AzureConfig.DL, "upload");
-            AzureConfig.DL_RESULT = new DLStorageAdapter(AzureConfig.DL, "result");
-            AzureConfig.DL_JOB = new DLJobAdapter(AzureConfig.DL, AzureConfig.DL_RESULT);
+            BLOB_STORAGE = new BlobStorageAdapter(blobStorageConnectionString, "files");
+            DL = new DLClient(dlAccountName, secret, subId, clientId, domain);
+            DL_RESULT = new DLStorageAdapter(DL, "result");
+            DL_JOB = new DLJobAdapter(new BlobStorageUriFactory(BLOB_STORAGE), DL, DL_RESULT);
         }
     }
 }
