@@ -35,8 +35,8 @@ namespace WebRole {
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             BLOB_STORAGE = new BlobStorageAdapter(blobStorageConnectionString, "files");
             DL = new DLClient(dlAccountName, secret, subId, clientId, domain);
-            DL_RESULT = new DLStorageAdapter(DL, "result");
-            DL_JOB = new DLJobAdapter(new BlobStorageUriFactory(BLOB_STORAGE), DL, DL_RESULT);
+            DL_JOB_STORAGE = new DLStorageAdapter(DL, "job");
+            DL_JOB = new DLJobAdapter(new BlobStorageUriFactory(BLOB_STORAGE), DL, DL_JOB_STORAGE);
         }
     }
 }
