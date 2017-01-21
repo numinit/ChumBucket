@@ -349,7 +349,6 @@
     <Content Include="Content\images\gearsLight.svg" />
     <Content Include="Content\images\LoadingGear150.gif" />
     <Content Include="Global.asax" />
-    <Content Include="Stylesheets\chumbucket\Site.css" />
     <Content Include="Stylesheets\fineuploader\fine-uploader-new.css" />
     <Content Include="Stylesheets\fineuploader\fine-uploader.css" />
     <Content Include="Web.config" />

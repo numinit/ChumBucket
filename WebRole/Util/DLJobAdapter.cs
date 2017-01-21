@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using WebRole.Util;
@@ -38,7 +39,7 @@ namespace ChumBucket.Util {
             // Create an empty output file named after the job ID.
             // This will let us use the job ID to query the Data Lake storage adapter later.
             var jobStorageUri = this.KeyToAdlUri(jobKey);
-            var storageFile = new StorageFile(new MemoryStream(), jobStorageUri, jobName, "text/csv");
+            var storageFile = new StorageFile(new MemoryStream(), jobStorageUri, jobKey, "text/csv");
             this._resultStorage.Store(storageFile, JOB_RESULT_BUCKET);
 
             // Now, submit the job
@@ -78,34 +79,34 @@ namespace ChumBucket.Util {
             return new DLEntityUri(bucket: JOB_RESULT_BUCKET, key: string.Format("{0}.csv", key));
         }
 
-        static Regex INPUT_REGEX = new Regex(@"@in\s*\[\s*""\s*([^""]*)""\s*\]", RegexOptions.Compiled);
+        static Regex INPUT_REGEX = new Regex(@"@in\s*\[\s*""\s*(?<key>[^""]*)""\s*\]", RegexOptions.Compiled);
 
         private string BuildScript(IDirectUriFactory factory, Guid jobId, EntityUri outputUri, string code) {
-            string script = string.Format(@"
-//
-// chumbucket job {0}
-// Output: {1}
-//
+            StringBuilder sb = new StringBuilder();
+            
+            sb.AppendFormat(@"/*
+ * chumbucket job {0}
+ * Output: {1}
+ */
 USE master;
 DECLARE @out string = @""{1}"";
-DECLARE @in = new SQL.MAP<string, string> {", jobId.ToString(), outputUri.ToString()).TrimStart();
+DECLARE @in = new SQL.MAP<string, string> {{", jobId.ToString(), outputUri.ToString());
 
             // Scan the code for instances of the input map, and add references
             var matches = INPUT_REGEX.Matches(code);
             foreach (Match match in matches) {
                 // Replace internal slashes
-                var key = match.Captures[1].Value.Replace(@"\", @"/");
+                var key = match.Groups["key"].Value.Replace(@"\", @"/");
                 var uri = this.Resolve(key);
-                script += "\r\n";
-                script += string.Format(@"    {@""{0}"", @""{1}""},", this.Escape(key), this.Escape(uri.ToString()));
+                sb.AppendFormat(@"    {{@""{0}"", @""{1}""}},", this.Escape(key), this.Escape(uri.ToString()));
             }
-            script += "\r\n";
-            script += "};";
-            script += "\r\n\r\n";
-            script += code;
-            script += "\r\n\r\n";
-            script += "OUTPUT @result TO @out USING Outputters.Csv();";
-            return script;
+            sb.AppendLine();
+            sb.AppendLine(@"};");
+            sb.AppendLine();
+            sb.Append(code);
+            sb.AppendLine();
+            sb.Append(@"OUTPUT @result TO @out USING Outputters.Csv();");
+            return sb.ToString();
         }
 
         private string Escape(string str) {
@@ -120,8 +121,8 @@ DECLARE @in = new SQL.MAP<string, string> {", jobId.ToString(), outputUri.ToStri
             string[] components = path.Split('/');
             string bucket = null, key = null;
             if (components.Length == 1) {
-                // This references a bucket
-                bucket = components[0];
+                // This references a bucket; wildcard it
+                bucket = string.Format("{0}/*", components[0]);
             } else if (components.Length == 2) {
                 // This references a file inside a bucket
                 bucket = components[0];

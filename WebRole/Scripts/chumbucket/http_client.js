@@ -11,9 +11,9 @@ chumbucket.HTTPClient.makeAbsolute = function(base, uri) {
     return [chumbucket.HTTPClient.stripTrailingSlashes(base), uri.replace(/^\/+/g, '')].join('/');
 };
 
-chumbucket.HTTPClient.prototype.get = function(uri, type, query) {
-    type = type || 'application/json';
+chumbucket.HTTPClient.prototype.get = function(uri, query, type) {
     query = query || {};
+    type = type || 'application/json';
 
     var xhr = new XMLHttpRequest();
     var keys = Object.keys(query);

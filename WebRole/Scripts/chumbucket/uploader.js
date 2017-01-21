@@ -22,18 +22,22 @@
             }
         },
         request: {
-            endpoint: 'https://chumbucket.blob.core.windows.net/files'
+            endpoint: 'https://chumbucket.blob.core.windows.net/files',
         },
         signature: {
             endpoint: '/file/sas'
         },
         uploadSuccess: {
-            endpoint: '/file/success'
+            endpoint: '/file/success',
+            params: {
+                mimeType: 'text/csv'
+            }
         },
         autoUpload: false,
         debug: true,
         validation: {
             allowedExtensions: ['csv'],
+            acceptFiles: ['text/csv']
         },
         deleteFile: {
             enabled: false

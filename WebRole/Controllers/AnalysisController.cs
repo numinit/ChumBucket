@@ -12,7 +12,7 @@ namespace WebRole.Controllers {
     [RoutePrefix("analysis")]
     public class AnalysisController : Controller {
         private IStorageAdapter _upload = AzureConfig.DL_UPLOAD;
-        private IStorageAdapter _result = AzureConfig.DL_RESULT;
+        private IStorageAdapter _result = AzureConfig.DL_JOB_STORAGE;
         private DLJobAdapter _job = AzureConfig.DL_JOB;
 
         private class SubmitRequest {

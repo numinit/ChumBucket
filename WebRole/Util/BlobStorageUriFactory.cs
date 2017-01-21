@@ -16,5 +16,11 @@ namespace WebRole.Util {
             return entityUri.ToDirectUri(this._adapter.GetAccountName(),
                                          this._adapter.GetContainerName());
         }
+
+        public Uri BuildDirectHttpsUri(string bucket, string key) {
+            var entityUri = new BlobStorageEntityUri(bucket: bucket, key: key);
+            return entityUri.ToDirectHttpsUri(this._adapter.GetAccountName(),
+                                              this._adapter.GetContainerName());
+        }
     }
 }

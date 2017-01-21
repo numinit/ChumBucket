@@ -84,7 +84,7 @@ namespace ChumBucket.Util {
          * <param name="containerName">The container name</param>
          * <returns>A direct HTTPS URI to the resource</returns>
          */
-        public abstract Uri ToHttpsUri(string accountName, string containerName);
+        public abstract Uri ToDirectHttpsUri(string accountName, string containerName);
 
         public static EntityUri FromBlobStorage(string bucket, string key = null) {
             return new BlobStorageEntityUri(bucket: bucket, key: key);
@@ -102,7 +102,7 @@ namespace ChumBucket.Util {
                 builder.Scheme = string.Format("chumbucket+{0}", ns);
                 builder.Host = bucket;
                 if (key != null) {
-                    builder.Path = Path.Combine("/", key);
+                    builder.Path = string.Format("/{0}", key);
                 }
                 return builder.Uri.ToString();
             } else {
@@ -125,21 +125,21 @@ namespace ChumBucket.Util {
             builder.Scheme = this.Namespace;
             builder.Host = string.Format("{0}@{1}", containerName, accountName);
             if (this.Scope == UriScope.BUCKET) {
-                builder.Path = Path.Combine("/", this.Authority);
+                builder.Path = string.Format("/{0}", this.Authority);
             } else {
-                builder.Path = Path.Combine("/", this.Authority, this.AbsolutePath);
+                builder.Path = string.Format("/{0}{1}", this.Authority, this.AbsolutePath);
             }
             return builder.Uri;
         }
 
-        public override Uri ToHttpsUri(string accountName, string containerName) {
+        public override Uri ToDirectHttpsUri(string accountName, string containerName) {
             UriBuilder builder = new UriBuilder();
             builder.Scheme = "https";
             builder.Host = string.Format("{0}.blob.core.windows.net", accountName);
             if (this.Scope == UriScope.BUCKET) {
-                builder.Path = Path.Combine("/", containerName, this.Authority);
+                builder.Path = string.Format("/{0}/{1}", containerName, this.Authority);
             } else {
-                builder.Path = Path.Combine("/", containerName, this.Authority, this.AbsolutePath);
+                builder.Path = string.Format("/{0}/{1}{2}", containerName, this.Authority, this.AbsolutePath);
             }
             return builder.Uri;
         }
@@ -159,21 +159,21 @@ namespace ChumBucket.Util {
             builder.Scheme = this.Namespace;
             builder.Host = string.Format("{0}.azuredatalake.net", accountName);
             if (this.Scope == UriScope.BUCKET) {
-                builder.Path = Path.Combine("/", containerName, this.Authority);
+                builder.Path = string.Format("/{0}/{1}", containerName, this.Authority);
             } else {
-                builder.Path = Path.Combine("/", containerName, this.Authority, this.AbsolutePath);
+                builder.Path = string.Format("/{0}/{1}{2}", containerName, this.Authority, this.AbsolutePath);
             }
             return builder.Uri;
         }
 
-        public override Uri ToHttpsUri(string accountName, string containerName) {
+        public override Uri ToDirectHttpsUri(string accountName, string containerName) {
             UriBuilder builder = new UriBuilder();
             builder.Scheme = "https";
             builder.Host = string.Format("{0}.azuredatalakestore.net", accountName);
             if (this.Scope == UriScope.BUCKET) {
-                builder.Path = Path.Combine("/webhdfs", "v1", containerName, this.Authority);
+                builder.Path = string.Format("/webhdfs/v1/{0}/{1}", containerName, this.Authority);
             } else {
-                builder.Path = Path.Combine("/webhdfs", "v1", containerName, this.Authority, this.AbsolutePath);
+                builder.Path = string.Format("/webhdfs/v1/{0}/{1}{2}", containerName, this.Authority, this.AbsolutePath);
             }
             return builder.Uri;
         }
@@ -192,7 +192,7 @@ namespace ChumBucket.Util {
             return this;
         }
 
-        public override Uri ToHttpsUri(string accountName, string containerName) {
+        public override Uri ToDirectHttpsUri(string accountName, string containerName) {
             throw new NotImplementedException();
         }
     }

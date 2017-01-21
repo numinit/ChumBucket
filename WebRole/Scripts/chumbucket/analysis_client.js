@@ -3,10 +3,11 @@
 };
 
 chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusCallback, interval) {
-    interval = interval || 5000;
+    interval = interval || 2500;
 
+    var client = this;
     var onFailure = function(error) {
-        statusCallback('HTTP_ERROR', null);
+        statusCallback('FAILED', null);
     };
 
     // Submit the job
@@ -14,7 +15,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
         var submitObject = submitResult.getResult();
         var uri = submitObject['uri'];
         if (!uri) {
-            statusCallback('PROTOCOL_ERROR', null);
+            statusCallback('FAILED', null);
             return;
         }
 
@@ -23,7 +24,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
                 var statusObject = statusResult.getResult();
                 var status = statusObject['status'];
                 if (!status) {
-                    statusCallback('PROTOCOL_ERROR', null);
+                    statusCallback('FAILED', null);
                     clearInterval(handle);
                     return;
                 }
@@ -43,11 +44,11 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
                 clearInterval(handle);
             };
 
-            this.status(uri).then(onStatusSuccess, onStatusFailure);
+            client.status(uri).then(onStatusSuccess, onStatusFailure);
         }, interval);
     };
 
-    this.submit(name, code).then(onSubmitSuccess, onFailure);
+    client.submit(name, code).then(onSubmitSuccess, onFailure);
 };
 
 chumbucket.AnalysisClient.prototype.submit = function(name, code) {

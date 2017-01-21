@@ -29,6 +29,8 @@ namespace ChumBucket.Util {
         private class Meta {
             [JsonProperty("name")]
             public string Name { get; set; }
+            [JsonProperty("guid")]
+            public string Guid { get; set; }
             [JsonProperty("contentType")]
             public string ContentType { get; set; }
         }
@@ -73,6 +75,7 @@ namespace ChumBucket.Util {
             // Write the metadata
             var json = JsonConvert.SerializeObject(new Meta {
                 Name = file.Name,
+                Guid = Guid.NewGuid().ToString(),
                 ContentType = file.ContentType
             });
 
@@ -129,7 +132,7 @@ namespace ChumBucket.Util {
         }
 
         private string BucketPath(string bucket) {
-            return Path.Combine(this._containerName, bucket);
+            return string.Format("{0}/{1}", this._containerName, bucket);
         }
 
         private string UploadPath(string bucket, string key) {
@@ -141,9 +144,10 @@ namespace ChumBucket.Util {
         }
 
         private string AbsPath(string bucket, string key, string extension) {
-            return Path.Combine(
-                this.BucketPath(bucket),
-                string.Format("{0}.{1}", Path.GetFileNameWithoutExtension(key), extension)
+            return string.Format(
+                "{0}/{1}/{2}.{3}",
+                this._containerName, bucket,
+                Path.GetFileNameWithoutExtension(key), extension
             );
         }
 
