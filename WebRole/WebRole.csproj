@@ -341,8 +341,6 @@
     <Content Include="Stylesheets\chumbucket\Master.css" />
     <Content Include="Content\FineUploader\uploader.html" />
     <Content Include="Content\images\ChumBucket.svg" />
-    <Content Include="Content\images\DarwinMaskIcon.svg" />
-    <Content Include="Content\images\DefaultPerson.svg" />
     <Content Include="Content\images\gearsDark.svg" />
     <Content Include="Content\images\gearsLight.svg" />
     <Content Include="Content\images\LoadingGear150.gif" />
