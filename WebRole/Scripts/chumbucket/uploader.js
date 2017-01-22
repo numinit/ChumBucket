@@ -53,22 +53,25 @@
                 // Record the start time for submission
                 startTimes[name] = new Date();
             },
-            onComplete: function(fileId, name) {
-                // Record the end time for submission
+            onComplete: function (fileId, name, responseJSON) {
+                // TODO: see if the upload was successful
+                var success =  responseJSON['success'];
+
+                // Record the end time for submission in seconds
                 endTimes[name] = new Date();
                 deltaTimes[name] = (endTimes[name].getTime() - startTimes[name].getTime()) / 1000;
 
-                // Indicate the delta time on a DOM element
+                // Create a new row in the timing table
                 var timingTable = ref.getTimingTable();
                 var newRow = timingTable.insertRow(1);
                 newRow.setAttribute('data-filename', name);
 
-                // Add three cells and provide their values
+                // Write the filename, status, and upload time to the new row
                 var cell1 = newRow.insertCell(0);
                 var cell2 = newRow.insertCell(1);
                 var cell3 = newRow.insertCell(2);
                 cell1.textContent = bucketNames[name] + "/" + name;
-                cell2.textContent = "Complete";
+                cell2.textContent = success ? "Complete" : "Failed";
                 cell3.textContent = deltaTimes[name] + " seconds";
 
                 delete startTimes[name];
