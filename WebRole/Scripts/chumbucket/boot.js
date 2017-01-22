@@ -64,10 +64,7 @@ chumbucket.onBoot = function(document, options) {
                 var error = '';
                 analysisStatus.className = 'input-group-addon bg-danger';
                 analysisStatus.textContent = analysisString;
-                for (var i = 0; i < result['errorMessages'].length; i++) {
-                    error += result.errorMessages[i] + "\n\n";
-                }
-                analysisConsole.textContent = error;
+                analysisConsole.textContent = result['error'];
                 enableAnalysis();
             } else if (state === 'SUCCEEDED') {
                 analysisStatus.className = 'input-group-addon bg-success';

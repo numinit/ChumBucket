@@ -7,7 +7,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
 
     var client = this;
     var onFailure = function(error) {
-        statusCallback('FAILED', {}, '');
+        statusCallback('FAILED', {'error': 'server error: ' + error.getFailureReason()}, '');
     };
 
     // Submit the job
@@ -15,7 +15,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
         var submitObject = submitResult.getResult();
         var uri = submitObject['uri'];
         if (!uri) {
-            statusCallback('FAILED', {}, uri);
+            statusCallback('FAILED', {'error': 'pre-submit error: no URI provided'}, '');
             return;
         }
 
@@ -24,7 +24,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
                 var statusObject = statusResult.getResult();
                 var status = statusObject['status'];
                 if (!status) {
-                    statusCallback('FAILED', {}, uri);
+                    statusCallback('FAILED', {'error': 'server error: no status in result'}, uri);
                     clearInterval(handle);
                     return;
                 }
@@ -40,7 +40,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
             };
 
             var onStatusFailure = function(statusError) {
-                statusCallback('FAILED', {}, uri);
+                statusCallback('FAILED', {'error': 'server error: ' + statusError.getFailureReason()}, uri);
                 clearInterval(handle);
             };
 

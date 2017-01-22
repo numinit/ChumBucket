@@ -5,13 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Web;
 using System.Web.Mvc;
 
 namespace WebRole.Controllers {
     [RoutePrefix("analysis")]
     public class AnalysisController : Controller {
-        private IStorageAdapter _upload = AzureConfig.DL_UPLOAD;
         private IStorageAdapter _result = AzureConfig.DL_JOB_STORAGE;
         private DLJobAdapter _job = AzureConfig.DL_JOB;
 
@@ -149,19 +149,67 @@ namespace WebRole.Controllers {
                     }
                 }, JsonRequestBehavior.AllowGet);
             } else {
-                var errorMessages = new List<string>();
-                foreach (var error in info.ErrorMessage) {
-                    // super annoying :(
-                    errorMessages.Add(string.Format("Message: {0}\nDescription: {1}\nDetails: {2}", error.Message, error.Description, error.Details));
-                }
                 return Json(new {
                     result = new {
                         status = statusString,
                         startTime = startTimeString,
                         durationMs = duration,
-                        errorMessages = errorMessages
+                        error = BuildErrorMessage(info)
                     }
                 }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        private static string BuildErrorMessage(JobInformation info) {
+            var builder = new StringBuilder();
+            var i = 1;
+            foreach (var error in info.ErrorMessage) {
+                AppendError(i, error, builder);
+                if (error.InnerError != null) {
+                    // This is annoying. The InnerError isn't provided as a JobErrorDetails,
+                    // so make one ourselves.
+                    var innerError = error.InnerError;
+                    var innerErrorDetails = new JobErrorDetails(description: innerError.Description, details: innerError.Details,
+                                                                errorId: innerError.ErrorId, message: innerError.Message,
+                                                                resolution: innerError.Resolution);
+                    var innerErrorBuilder = new StringBuilder();
+
+                    // Now, perform the append.
+                    AppendError(i, innerErrorDetails, innerErrorBuilder);
+
+                    // Then, indent each line from the inner error.
+                    using (var reader = new StringReader(innerErrorBuilder.ToString())) {
+                        string line = string.Empty;
+                        while (line != null) {
+                            line = reader.ReadLine();
+                            if (line != null) {
+                                builder.AppendFormat("    {0}", line);
+                            }
+                        }
+                    }
+                }
+
+                i += 1;
+            }
+
+            return builder.ToString();
+        }
+
+        private static void AppendError(int idx, JobErrorDetails error, StringBuilder builder) {
+            builder.AppendFormat(@"[{0}] {1}: {2}
+
+=== DESCRIPTION ===
+{3}
+
+=== DETAILS ===
+{4}", idx, error.ErrorId, error.Message, error.Description, error.Details);
+
+            var resolution = error.Resolution;
+            if (resolution != null && resolution.Length > 0) {
+                builder.AppendFormat(@"
+
+=== RESOLUTION ===
+{0}", resolution);
             }
         }
     }

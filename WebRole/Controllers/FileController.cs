@@ -22,7 +22,6 @@ namespace ChumBucket.Controllers {
     [RoutePrefix("file")]
     public class FileController : Controller {
         private BlobStorageAdapter _blobAdapter = AzureConfig.BLOB_STORAGE;
-        private DLStorageAdapter _dataLakeAdapter = AzureConfig.DL_UPLOAD;
 
         [HttpGet]
         [Route("query")]
