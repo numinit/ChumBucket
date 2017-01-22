@@ -74,8 +74,16 @@
         width: 60%;
     }
 
-    textarea#analysis-query {
+    textarea#analysis-query, textarea#analysis-console {
         font-family: "Share Tech Mono", monospace;
+    }
+
+    textarea#analysis-console {
+        background-color: #fff;
+    }
+
+    table#upload-timing th {
+        text-align: center;
     }
 </style>
 
@@ -87,6 +95,14 @@
                 <input class="form-control" type="text" placeholder="Bucket name (defaults to 'default')" id="bucket-name"></input>
             </div>
             <div id="upload"></div>
+            <h3>Upload History</h3>
+            <table id="upload-timing" class="table">
+                <tr>
+                    <th>Filename</th>
+                    <th>Status</th>
+                    <th>Upload Time</th>
+                </tr>
+            </table>
         </div>
         <div class="col-sm-4">
             <h3>CSV Analysis</h3>
@@ -98,17 +114,9 @@
                 <textarea class="form-control" rows="5" id="analysis-query" placeholder="@("Enter your query here. To reference an uploaded file, use the map named @in (e.g. @in[\"bucket/foo.csv\"] to reference an individual file, or @in[\"bucket\"] to reference all files in a given bucket).")"></textarea>
             </div>
             <button class="btn btn-default" id="analysis-submit" type="button">Start Analysis</button>
-        </div>
-    </div>
-</div>
-<div class="row">
-    <div class="col-sm-offset-3 col-sm-6">
-        <table id="upload-timing" class="table">
-            <tr>
-                <th>Filename</th>
-                <th>Status</th>
-                <th>Upload Time</th>
-            </tr>
-        </table>
+            <h3>U-SQL Console</h3>
+            <div class="form-group">
+                <textarea class="form-control" rows="10" id="analysis-console" placeholder="Output appears here..." readonly></textarea>
+            </div>
     </div>
 </div>

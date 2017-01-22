@@ -33,12 +33,14 @@ chumbucket.onBoot = function(document, options) {
         var analysisCode = analysisCodeField.value || '';
         analysisCode = analysisCode.trim();
         var analysisStatus = document.querySelector('#analysis-status');
+        var analysisConsole = document.querySelector('#analysis-console');
 
         var disableAnalysis = function() {
             analysisButton.setAttribute('disabled', 'disabled');
             analysisNameField.setAttribute('disabled', 'disabled');
             analysisNameField.value = analysisJobName + ' started...';
             analysisStatus.textContent = 'Waiting';
+            analysisConsole.textContent = 'Job submitted. Hold tight...';
         };
 
         var enableAnalysis = function() {
@@ -59,18 +61,24 @@ chumbucket.onBoot = function(document, options) {
             }).join(' ');
 
             if (state === 'FAILED') {
+                var error = '';
                 analysisStatus.className = 'input-group-addon bg-danger';
-                analysisCodeField.value = result['errorMessages'][0];
                 analysisStatus.textContent = analysisString;
+                for (var i = 0; i < result['errorMessages'].length; i++) {
+                    error += result.errorMessages[i] + "\n\n";
+                }
+                analysisConsole.textContent = error;
                 enableAnalysis();
             } else if (state === 'SUCCEEDED') {
                 analysisStatus.className = 'input-group-addon bg-success';
                 analysisStatus.innerHTML = '<a href="/analysis/result?uri=' + encodeURIComponent(uri) +
                     '" target="_blank">' + analysisString + '</a>';
+                analysisConsole.textContent = 'Analysis succeeded. Click the link above to view the results'.
                 enableAnalysis();
             } else {
                 analysisStatus.className = 'input-group-addon bg-warning';
                 analysisStatus.textContent = analysisString;
+                analysisConsole.textContent = uri + ' is in progress...';
             }
         });
     });

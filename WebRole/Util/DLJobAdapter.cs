@@ -107,7 +107,10 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
             sb.AppendLine();
             sb.AppendLine(@"};");
             sb.AppendLine();
-            sb.Append(code);
+            sb.AppendLine("// YOUR CODE STARTS HERE");
+            sb.Append(code.Trim());
+            sb.AppendLine();
+            sb.AppendLine("// YOUR CODE ENDS HERE");
             sb.AppendLine();
             sb.Append(@"OUTPUT @result TO @out USING Outputters.Csv();");
             return sb.ToString();
