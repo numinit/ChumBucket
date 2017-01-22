@@ -7,7 +7,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
 
     var client = this;
     var onFailure = function(error) {
-        statusCallback('FAILED', null);
+        statusCallback('FAILED', {}, '');
     };
 
     // Submit the job
@@ -15,7 +15,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
         var submitObject = submitResult.getResult();
         var uri = submitObject['uri'];
         if (!uri) {
-            statusCallback('FAILED', null);
+            statusCallback('FAILED', {}, uri);
             return;
         }
 
@@ -24,7 +24,7 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
                 var statusObject = statusResult.getResult();
                 var status = statusObject['status'];
                 if (!status) {
-                    statusCallback('FAILED', null);
+                    statusCallback('FAILED', {}, uri);
                     clearInterval(handle);
                     return;
                 }
@@ -34,13 +34,13 @@ chumbucket.AnalysisClient.prototype.submitAndPoll = function(name, code, statusC
                         clearInterval(handle);
                         // fall-through
                     default:
-                        statusCallback(status, statusObject);
+                        statusCallback(status, statusObject, uri);
                         break;
                 }
             };
 
             var onStatusFailure = function(statusError) {
-                onFailure(statusError);
+                statusCallback('FAILED', {}, uri);
                 clearInterval(handle);
             };
 

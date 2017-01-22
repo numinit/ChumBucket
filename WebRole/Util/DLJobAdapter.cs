@@ -126,7 +126,8 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
             string bucket = null, key = null;
             if (components.Length == 1) {
                 // This references a bucket; wildcard it
-                bucket = string.Format("{0}/*", components[0]);
+                bucket = components[0];
+                key = "{*}.csv";
             } else if (components.Length == 2) {
                 // This references a file inside a bucket
                 bucket = components[0];

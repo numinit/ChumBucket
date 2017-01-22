@@ -105,7 +105,9 @@ namespace WebRole.Controllers {
                 if (job.Result == JobResult.Succeeded) {
                     var file = this._job.GetJobResult(uri);
                     Response.StatusCode = 200;
-                    return new FileStreamResult(file.InputStream, file.ContentType);
+
+                    // Force the file to appear in the web browser with text/plain content type
+                    return new FileStreamResult(file.InputStream, "text/plain");
                 } else {
                     throw new KeyNotFoundException("job is unfinished");
                 }
