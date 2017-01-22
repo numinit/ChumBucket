@@ -13,17 +13,18 @@ using WebRole.Util;
 
 namespace ChumBucket.Util {
     public class DLJobAdapter {
-        private static string DATA_LAKE_BUCKET = "dl";
+        private static string DATA_LAKE_AUTHORITY = "dl";
         private static string JOB_RESULT_BUCKET = "result";
 
-        private IDirectUriFactory _factory;
+        private IDirectUriFactory _blobStorageFactory, _dlStorageFactory;
         private DLClient _client;
         private DLStorageAdapter _resultStorage;
         private DataLakeAnalyticsJobManagementClient _jobClient;
         private IFileSystemOperations _fs;
 
-        public DLJobAdapter(IDirectUriFactory factory, DLClient client, DLStorageAdapter resultStorage) {
-            this._factory = factory;
+        public DLJobAdapter(IDirectUriFactory blobStorageFactory, DLClient client, DLStorageAdapter resultStorage) {
+            this._blobStorageFactory = blobStorageFactory;
+            this._dlStorageFactory = new DLStorageUriFactory(resultStorage);
             this._client = client;
             this._resultStorage = resultStorage;
             this._jobClient = client.JobClient;
@@ -43,18 +44,18 @@ namespace ChumBucket.Util {
             this._resultStorage.Store(storageFile, JOB_RESULT_BUCKET);
 
             // Now, submit the job
-            var properties = new USqlJobProperties(this.BuildScript(this._factory, jobId, jobStorageUri, code));
+            var properties = new USqlJobProperties(this.BuildScript(jobId, jobStorageUri, code));
             var parameters = new JobInformation(jobName, JobType.USql, properties,
                 priority: priority, degreeOfParallelism: parallelism, jobId: jobId);
             var jobInfo = this._jobClient.Job.Create(this._client.AccountName, jobId, parameters);
 
             // Return a chumbucket+job://dl/{jobKey} URI for this job.
-            return new JobEntityUri(bucket: DATA_LAKE_BUCKET, key: jobKey);
+            return new JobEntityUri(bucket: DATA_LAKE_AUTHORITY, key: jobKey);
         }
 
         public JobInformation GetJobInfo(JobEntityUri uri) {
             // Get the job GUID from the URI
-            if (uri.Bucket != DATA_LAKE_BUCKET) {
+            if (uri.Bucket != DATA_LAKE_AUTHORITY) {
                 throw new ArgumentException("invalid bucket");
             }
 
@@ -67,7 +68,7 @@ namespace ChumBucket.Util {
         }
 
         public StorageFile GetJobResult(JobEntityUri uri) {
-            if (uri.Bucket != DATA_LAKE_BUCKET) {
+            if (uri.Bucket != DATA_LAKE_AUTHORITY) {
                 throw new ArgumentException("invalid bucket");
             }
 
@@ -81,16 +82,19 @@ namespace ChumBucket.Util {
 
         static Regex INPUT_REGEX = new Regex(@"@in\s*\[\s*""\s*(?<key>[^""]*)""\s*\]", RegexOptions.Compiled);
 
-        private string BuildScript(IDirectUriFactory factory, Guid jobId, EntityUri outputUri, string code) {
+        private string BuildScript(Guid jobId, EntityUri outputUri, string code) {
+            // Resolve the output URI to Data Lake Store
+            var resolvedOutputUri = this._dlStorageFactory.BuildDirectUri(outputUri.Bucket, outputUri.Key);
+
+            // Piece together the script
             StringBuilder sb = new StringBuilder();
-            
-            sb.AppendFormat(@"/*
- * chumbucket job {0}
- * Output: {1}
- */
+            sb.AppendFormat(@"//
+// chumbucket job {0}
+// Output: {1}
+//
 USE master;
 DECLARE @out string = @""{1}"";
-DECLARE @in = new SQL.MAP<string, string> {{", jobId.ToString(), outputUri.ToString());
+DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToString(), resolvedOutputUri.ToString());
 
             // Scan the code for instances of the input map, and add references
             var matches = INPUT_REGEX.Matches(code);
@@ -137,7 +141,7 @@ DECLARE @in = new SQL.MAP<string, string> {{", jobId.ToString(), outputUri.ToStr
                 throw new ArgumentException("filename may not be empty");
             }
 
-            return this._factory.BuildDirectUri(bucket, key);
+            return this._blobStorageFactory.BuildDirectUri(bucket, key);
         }
     }
 }

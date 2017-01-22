@@ -32,11 +32,13 @@ chumbucket.onBoot = function(document, options) {
         var analysisCodeField = document.querySelector('#analysis-query');
         var analysisCode = analysisCodeField.value || '';
         analysisCode = analysisCode.trim();
+        var analysisStatus = document.querySelector('#analysis-status');
 
         var disableAnalysis = function() {
             analysisButton.setAttribute('disabled', 'disabled');
             analysisNameField.setAttribute('disabled', 'disabled');
             analysisNameField.value = analysisJobName + ' started...';
+            analysisStatus.textContent = 'Waiting';
         };
 
         var enableAnalysis = function() {
@@ -52,7 +54,7 @@ chumbucket.onBoot = function(document, options) {
         }
 
         analysisClient.submitAndPoll(analysisJobName, analysisCode, function(state, result) {
-            var analysisStatus = document.querySelector('#analysis-status');
+            
             var analysisString = state.split(/_+/g).map(function(s) {
                 return s[0].toUpperCase() + s.slice(1).toLowerCase()
             }).join(' ');
@@ -60,6 +62,7 @@ chumbucket.onBoot = function(document, options) {
 
             if (state === 'FAILED') {
                 analysisStatus.className = 'input-group-addon bg-danger';
+                analysisCodeField.value = result['errorMessages'][0];
                 enableAnalysis();
             } else if (state === 'SUCCEEDED') {
                 analysisStatus.className = 'input-group-addon bg-success';
