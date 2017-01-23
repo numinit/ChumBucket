@@ -28,7 +28,7 @@
             endpoint: ref.getUploadEndpoint(),
         },
         signature: {
-            endpoint: '/file/uploadSas'
+            endpoint: '/file/uploadSignature'
         },
         uploadSuccess: {
             endpoint: '/file/uploadSuccess',

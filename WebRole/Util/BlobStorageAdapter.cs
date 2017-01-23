@@ -46,26 +46,33 @@ namespace ChumBucket.Util {
         }
 
         public StorageFile Retrieve(EntityUri uri) {
-            try {
-                // Get a reference to the directory and the blob
-                var directory = this._blobContainer.GetDirectoryReference(uri.Bucket);
-                var key = uri.Key;
-                var blob = directory.GetBlockBlobReference(key);
+            // Get a reference to the directory and the blob
+            var directory = this._blobContainer.GetDirectoryReference(uri.Bucket);
+            var key = uri.Key;
+            var blob = directory.GetBlockBlobReference(key);
 
-                if (!blob.Exists()) {
-                    throw new KeyNotFoundException("key does not exist");
-                } else {
-                    var stream = blob.OpenRead();
-                    var name = blob.Metadata["name"];
-                    if (name == null) {
-                        // No other name stored
-                        name = key;
-                    }
-                
-                    return new StorageFile(stream, uri, name, blob.Properties.ContentType);
+            if (!blob.Exists()) {
+                throw new KeyNotFoundException("key does not exist");
+            } else {
+                var stream = blob.OpenRead();
+                var name = blob.Metadata["name"];
+                if (name == null) {
+                    // No other name stored
+                    name = key;
                 }
-            } catch (Exception e) when (e is ArgumentNullException || e is FormatException) {
-                throw new ArgumentException(e.Message);
+                
+                return new StorageFile(stream, uri, name, blob.Properties.ContentType);
+            }
+        }
+
+        public void Delete(EntityUri uri) {
+            var directory = this._blobContainer.GetDirectoryReference(uri.Bucket);
+            var key = uri.Key;
+            var blob = directory.GetBlockBlobReference(key);
+
+            var exists = blob.DeleteIfExists();
+            if (!exists) {
+                throw new KeyNotFoundException("key does not exist");
             }
         }
 

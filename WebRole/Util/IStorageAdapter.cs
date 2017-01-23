@@ -38,6 +38,14 @@ namespace ChumBucket.Util {
         StorageFile Retrieve(EntityUri uri);
 
         /**
+         * Deletes a file by a URI.
+         * If the URI is invalid, must throw an ArgumentException.
+         * If the file does not exist, must throw a KeyNotFoundException.
+         * <param name="uri">The URI to delete</param>
+         */
+        void Delete(EntityUri uri);
+
+        /**
          * Lists all buckets in this adapter.
          * <returns>An ICollection of bucket names</returns>
          */

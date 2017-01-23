@@ -59,17 +59,12 @@ namespace ChumBucket.Controllers {
         }
 
         [HttpGet]
-        [Route("clientSas")]
-        public ActionResult ClientSas() {
+        [Route("getDirectUri")]
+        public ActionResult GetDirectUri() {
             try {
                 // Give them back a direct SAS URI.
                 var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
-                var verb = Request.QueryString["verb"];
-                if (verb == null) {
-                    throw new ArgumentException("no verb provided");
-                }
-
-                var sasUri = this._blobAdapter.GetSasForBlob(uri, verb, new[] {"GET", "DELETE"}, 60);
+                var sasUri = this._blobAdapter.GetSasForBlob(uri, "GET", new[] {"GET"}, 60);
 
                 Response.StatusCode = 200;
                 return Json(new {
@@ -98,9 +93,44 @@ namespace ChumBucket.Controllers {
             }
         }
 
+        [HttpDelete]
+        [Route("delete")]
+        public ActionResult Delete() {
+            try {
+                // Give them back a direct SAS URI.
+                var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
+                this._blobAdapter.Delete(uri);
+
+                Response.StatusCode = 202;
+                return Json(new {
+                    result = new {
+                        uri = uri.ToString()
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            } catch (Exception e) when (e is ArgumentException || e is FormatException) {
+                // Bad request
+                Response.StatusCode = 400;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            } catch (SecurityException e) {
+                // Forbidden
+                Response.StatusCode = 403;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            } catch (KeyNotFoundException e) {
+                // Not found
+                Response.StatusCode = 404;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         [HttpGet]
-        [Route("uploadSas")]
-        public ActionResult UploadSas() {
+        [Route("uploadSignature")]
+        public ActionResult UploadSignature() {
             try {
                 var blobUri = new Uri(Request.QueryString["bloburi"]);
                 var verb = Request.QueryString["_method"];

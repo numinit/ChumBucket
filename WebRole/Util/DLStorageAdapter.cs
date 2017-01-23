@@ -101,8 +101,23 @@ namespace ChumBucket.Util {
 
                     return new StorageFile(upload, uri, metadata.Name, metadata.ContentType);
                 }
-            } catch (Exception e) when (e is ArgumentNullException || e is FormatException || e is JsonException) {
+            } catch (Exception e) when (e is JsonException) {
                 throw new ArgumentException(e.Message);
+            }
+        }
+
+        public void Delete(EntityUri uri) {
+            var bucket = uri.Bucket;
+            var key = Path.GetFileNameWithoutExtension(uri.Key);
+            var uploadPath = this.UploadPath(bucket, key);
+            var metaPath = this.MetaPath(bucket, key);
+
+            if (!this._fs.PathExists(this._client.AccountName, uploadPath) ||
+                !this._fs.PathExists(this._client.AccountName, metaPath)) {
+                throw new KeyNotFoundException("key does not exist");
+            } else {
+                this._fs.Delete(this._client.AccountName, uploadPath);
+                this._fs.Delete(this._client.AccountName, metaPath);
             }
         }
 
