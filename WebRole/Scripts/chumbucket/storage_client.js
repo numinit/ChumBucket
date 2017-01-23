@@ -9,3 +9,7 @@ chumbucket.StorageClient.prototype.listBuckets = function () {
 chumbucket.StorageClient.prototype.listFilesInBucket = function (uri) {
     return this._http.get('file/listFilesInBucket', { 'uri': uri });
 };
+
+chumbucket.StorageClient.prototype.getDirectFileUri = function (uri) {
+    return this._http.get('file/getDirectUri', { 'uri': uri });
+};

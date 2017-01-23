@@ -325,6 +325,7 @@
     <Content Include="Scripts\chumbucket\analysis_client.js" />
     <Content Include="Scripts\chumbucket\boot.js" />
     <Content Include="Scripts\chumbucket\http_client.js" />
+    <Content Include="Scripts\chumbucket\storage_client.js" />
     <Content Include="Scripts\chumbucket\uploader.js" />
     <Content Include="Scripts\chumbucket\util.js" />
     <Content Include="Scripts\fineuploader\azure.fine-uploader.js" />

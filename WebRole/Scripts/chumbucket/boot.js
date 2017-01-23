@@ -21,8 +21,11 @@ function _updateFileListForBucket(result) {
     fileList.forEach(function (uri) {
         var row = storageContentTable.insertRow(-1);
         var cell0 = row.insertCell(0);
-        cell0.innerHTML = uri;
         cell0.style.textAlign = "left";
+        chumbucket._storageClient.getDirectFileUri(uri).then(function(result) {
+            var fileUri = result.getResult()['uri'];
+            cell0.innerHTML = "<a href=" + fileUri + ">" + uri + "</a>";
+        });
     });
 };
 
