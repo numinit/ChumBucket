@@ -380,10 +380,10 @@
     <Content Include="App_Start\AzureConfig.cs.example" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Properties\PublishProfiles\ChumBucket - Web Deploy.pubxml" />
+    <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
+    <None Include="Properties\PublishProfiles\ChumBucket - Web Deploy.pubxml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
