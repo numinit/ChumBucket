@@ -1,24 +1,28 @@
-﻿using Microsoft.WindowsAzure.Storage;
+﻿using ChumBucket.Util.Uris;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
 using System.Linq;
-using System.Web;
-using ChumBucket.Util;
 using System.Security;
 using System.Text.RegularExpressions;
-using WebRole.Util;
+using WebRole.Util.StorageAdapter;
 
-namespace ChumBucket.Util {
+namespace ChumBucket.Util.Storage {
+    /**
+     * An adapter for Azure Blob Storage.
+     */
     public class BlobStorageAdapter : IStorageAdapter {
-        private IDirectUriFactory _factory;
-        private CloudStorageAccount _storageAccount;
-        private CloudBlobClient _blobClient;
-        private CloudBlobContainer _blobContainer;
+        private readonly IDirectUriFactory _factory;
+        private readonly CloudStorageAccount _storageAccount;
+        private readonly CloudBlobClient _blobClient;
+        private readonly CloudBlobContainer _blobContainer;
 
+        /**
+         * Initializes this BlobStorageAdapter.
+         * <param name="connectionString">The connection string</param>
+         * <param name="containerName">The container name</param>
+         */
         public BlobStorageAdapter(string connectionString, string containerName) {
             this._factory = new BlobStorageUriFactory(this);
             this._storageAccount = CloudStorageAccount.Parse(connectionString);
@@ -36,6 +40,8 @@ namespace ChumBucket.Util {
         }
 
         public void Store(StorageFile file, string bucket) {
+            ValidationHelpers.ValidateBucketName(bucket);
+
             var directory = this._blobContainer.GetDirectoryReference(bucket);
             var blob = directory.GetBlockBlobReference(file.Name);
             using (file.InputStream) {
@@ -46,6 +52,8 @@ namespace ChumBucket.Util {
         }
 
         public StorageFile Retrieve(EntityUri uri) {
+            ValidationHelpers.ValidateUri(uri, typeof(BlobStorageEntityUri));
+
             // Get a reference to the directory and the blob
             var directory = this._blobContainer.GetDirectoryReference(uri.Bucket);
             var key = uri.Key;
@@ -66,6 +74,8 @@ namespace ChumBucket.Util {
         }
 
         public void Delete(EntityUri uri) {
+            ValidationHelpers.ValidateUri(uri, typeof(BlobStorageEntityUri));
+
             var directory = this._blobContainer.GetDirectoryReference(uri.Bucket);
             var key = uri.Key;
             var blob = directory.GetBlockBlobReference(key);
@@ -79,25 +89,34 @@ namespace ChumBucket.Util {
         public ICollection<EntityUri> ListBuckets() {
             var list = new List<EntityUri>();
             var blobs = this._blobContainer.ListBlobs();
-            var buckets = blobs.Where(b => b as CloudBlobDirectory != null);
+            var buckets = blobs.Where(b => b is CloudBlobDirectory);
             foreach (var bucket in buckets) {
-                list.Add(this.GetBlobStorageHandle(bucket.Uri, bucketsOnly: true));
+                list.Add(this.GetBlobStorageEntityUriFromDirect(bucket.Uri, bucketsOnly: true));
             }
             return list;
         }
 
         public ICollection<EntityUri> ListFiles(string bucket) {
+            ValidationHelpers.ValidateBucketName(bucket);
             var list = new List<EntityUri>();
             var directory = this._blobContainer.GetDirectoryReference(bucket);
-            var blobs = directory.ListBlobs().Where(b => b as CloudBlockBlob != null);
+            var blobs = directory.ListBlobs().Where(b => b is CloudBlockBlob);
             foreach (var blob in blobs) {
-                list.Add(this.GetBlobStorageHandle(blob.Uri));
+                list.Add(this.GetBlobStorageEntityUriFromDirect(blob.Uri));
             }
             return list;
         }
 
+        /**
+         * Finalizes the uploaded blob, assigning it a GUID,
+         * and setting its content type to the specified type.
+         * <param name="directUri">The blob URI</param>
+         * <param name="name">The filename</param>
+         * <param name="contentType">The content type, or null for application/octet-stream</param>
+         * <returns>A BlobStorageEntityUri for the blob</returns>
+         */
         public BlobStorageEntityUri FinalizeUploadedBlob(Uri blobUri, string name, string contentType) {
-            var entityUri = this.GetBlobStorageHandle(blobUri);
+            var entityUri = this.GetBlobStorageEntityUriFromDirect(blobUri);
             var bucket = this._blobContainer.GetDirectoryReference(entityUri.Bucket);
             var blob = bucket.GetBlockBlobReference(entityUri.Key);
             blob.Metadata["name"] = name;
@@ -115,21 +134,25 @@ namespace ChumBucket.Util {
             return entityUri;
         }
 
+        /**
+         * Returns the root HTTPS direct URI
+         * <returns>The root URI</returns>
+         */
         public Uri GetRootUri() {
             return this._factory.BuildDirectHttpsUri("");
         }
 
         /**
-         * Returns a direct SAS (shared access signature) for a given URI.
+         * Returns a SAS (shared access signature) URI for a given direct URI.
          * If there is an issue with the given blob URI, throws a SecurityException.
-         * <param name="blobUri">The blob URI</param>
+         * <param name="directUri">The direct URI</param>
          * <param name="verb">The HTTP verb</param>
          * <param name="allowedVerbs">The allowed HTTP verbs</param>
-         * <param name="expirationMins">The expiration time, in minutes</param>
+         * <param name="expirationMins">The expiration time, in minutes. Default is 15.</param>
          * <returns>A SAS URI</returns>
          */
-        public Uri GetSasForBlob(Uri blobUri, string verb, string[] allowedVerbs, int expirationMins = 15) {
-            var entityUri = this.GetBlobStorageHandle(blobUri);
+        public Uri GetSasForBlob(Uri directUri, string verb, string[] allowedVerbs, int expirationMins = 15) {
+            var entityUri = this.GetBlobStorageEntityUriFromDirect(directUri);
             var bucket = this._blobContainer.GetDirectoryReference(entityUri.Bucket);
             var blob = bucket.GetBlockBlobReference(entityUri.Key);
             verb = verb.ToUpperInvariant();
@@ -137,7 +160,7 @@ namespace ChumBucket.Util {
                 throw new SecurityException("unauthorized HTTP verb");
             }
 
-            SharedAccessBlobPermissions permission = SharedAccessBlobPermissions.None;
+            SharedAccessBlobPermissions permission;
             switch (verb) {
                 case "GET":
                     permission = SharedAccessBlobPermissions.Read;
@@ -159,24 +182,33 @@ namespace ChumBucket.Util {
             });
 
             var rewrittenUri = this._factory.BuildDirectHttpsUri(entityUri.Bucket, entityUri.Key);
-            return new Uri(string.Format("{0}{1}", rewrittenUri, sas));
+            return new Uri($"{rewrittenUri}{sas}");
         }
 
+        /**
+         * Returns a direct SAS (shared access signature) URI for a given blob URI.
+         * If there is an issue with the given blob URI, throws a SecurityException.
+         * <param name="directUri">The blob URI</param>
+         * <param name="verb">The HTTP verb</param>
+         * <param name="allowedVerbs">The allowed HTTP verbs</param>
+         * <param name="expirationMins">The expiration time, in minutes. Default is 15.</param>
+         * <returns>A SAS URI</returns>
+         */
         public Uri GetSasForBlob(BlobStorageEntityUri blobUri, string verb, string[] allowedVerbs, int expirationMins = 15) {
             return this.GetSasForBlob(this._factory.BuildDirectHttpsUri(blobUri.Bucket, blobUri.Key), verb, allowedVerbs, expirationMins);
         }
 
-        private static Regex BLOB_CORE_REGEX = new Regex(@"^(?<account>[^\.]+)\.blob\.core\.windows\.net$", RegexOptions.Compiled);
+        private static readonly Regex BLOB_CORE_REGEX = new Regex(@"^(?<account>[^\.]+)\.blob\.core\.windows\.net$", RegexOptions.Compiled);
 
         /**
          * Gets a blob storage entity URI from a direct URI.
          * If there's a mismatch between the direct URI and our configuration,
          * throws a SecurityException.
-         * <param name="blobUri">The blob URI</param>
+         * <param name="directUri">The blob URI</param>
          * <param name="bucketsOnly">Whether to only allow bucket URIs</param>
          * <returns>The corresponding BlobStorageEntityUri</returns>
          */
-        public BlobStorageEntityUri GetBlobStorageHandle(Uri blobUri, bool bucketsOnly = false) {
+        public BlobStorageEntityUri GetBlobStorageEntityUriFromDirect(Uri blobUri, bool bucketsOnly = false) {
             // Ensure that we're signing something reasonable.
             // The URI looks something like: https://{account}.blob.core.windows.net/{container}/{bucket}/{key}
             if (blobUri.Scheme != "https") {
@@ -204,9 +236,9 @@ namespace ChumBucket.Util {
             }
 
             // Normalize the bucket name
-            string bucketName = null;
+            string bucketName = components[1];
             try {
-                bucketName = this.NormalizeBucketName(components[1]);
+                ValidationHelpers.ValidateBucketName(bucketName);
             } catch (ArgumentException e) {
                 throw new SecurityException(e.Message);
             }
@@ -216,19 +248,6 @@ namespace ChumBucket.Util {
                 return new BlobStorageEntityUri(bucket: bucketName);
             } else {
                 return new BlobStorageEntityUri(bucket: bucketName, key: components[2]);
-            }
-        }
-
-        /* Bucket names must start with a letter */
-        static Regex BUCKET_NAME_REGEX = new Regex(@"^[a-z][a-z0-9_\-]*$");
-
-        private string NormalizeBucketName(string name) {
-            var lowerName = name.ToLowerInvariant();
-            var match = BUCKET_NAME_REGEX.Match(lowerName);
-            if (match.Success) {
-                return lowerName;
-            } else {
-                throw new ArgumentException("invalid bucket name");
             }
         }
     }

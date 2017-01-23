@@ -8,13 +8,18 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.Mvc;
+using ChumBucket.Util.DataLake;
+using ChumBucket.Util.Storage;
+using ChumBucket.Util.Uris;
 
 namespace WebRole.Controllers {
     [RoutePrefix("analysis")]
     public class AnalysisController : Controller {
-        private IStorageAdapter _result = AzureConfig.DL_JOB_STORAGE;
-        private DLJobAdapter _job = AzureConfig.DL_JOB;
+        private readonly DLJobAdapter _job = AzureConfig.DL_JOB;
 
+        /**
+         * A job submission request
+         */
         private class SubmitRequest {
             [JsonProperty("name")]
             public string Name { get; set; }

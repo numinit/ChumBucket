@@ -1,115 +1,48 @@
-﻿using ChumBucket.Util;
+﻿using ChumBucket.Util.Storage;
+using ChumBucket.Util.Uris;
 using Microsoft.Azure.Management.DataLake.Analytics;
 using Microsoft.Azure.Management.DataLake.Analytics.Models;
-using Microsoft.Azure.Management.DataLake.Store;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Web;
-using WebRole.Util;
 
-namespace ChumBucket.Util {
-    public class DLJobStatus {
-        private JobEntityUri _uri;
-        private string _status;
-        private DateTime _startTime;
-        private DateTime? _endTime;
-        private long? _bytes;
-        private double? _throughput;
-        private string _error;
-
-        public bool Succeeded {
-            get {
-                return this._status == "SUCCEEDED";
-            }
-        }
-
-        public bool Failed {
-            get {
-                return this._status == "FAILED";
-            }
-        }
-
-        public bool InProgress {
-            get {
-                return !this.Succeeded && !this.Failed;
-            }
-        }
-
-        public JobEntityUri Uri {
-            get { return this._uri; }
-        }
-
-        public string Status {
-            get { return this._status; }
-        }
-
-        public DateTime StartTime {
-            get { return this._startTime; }
-        }
-
-        public DateTime? EndTime {
-            get { return this._endTime; }
-        }
-
-        public TimeSpan Duration {
-            get {
-                if (!this.EndTime.HasValue) {
-                    return DateTime.UtcNow.Subtract(this.StartTime);
-                } else {
-                    return this.EndTime.Value.Subtract(this.StartTime);
-                }
-            }
-        }
-
-        public long? Bytes {
-            get { return this._bytes; }
-        }
-
-        public double? Throughput {
-            get { return this._throughput; }
-        }
-
-        public string Error {
-            get { return this._error; }
-        }
-
-        public DLJobStatus(JobEntityUri uri, string status, DateTime startTime,
-                           DateTime? endTime = null,
-                           long? bytes = null, double? throughput = null,
-                           string error = null) {
-            this._uri = uri;
-            this._status = status;
-            this._startTime = startTime;
-            this._endTime = endTime;
-            this._bytes = bytes;
-            this._throughput = throughput;
-            this._error = error;
-        }
-    }
-
+namespace ChumBucket.Util.DataLake {
+    /**
+     * An adapter around the Data Lake Job Management Client
+     * for submitting jobs in ChumBucket.
+     */
     public class DLJobAdapter {
-        private static string DATA_LAKE_AUTHORITY = "dl";
-        private static string JOB_RESULT_BUCKET = "result";
+        private static readonly string DATA_LAKE_AUTHORITY = "dl";
+        private static readonly string JOB_RESULT_BUCKET = "result";
 
-        private IDirectUriFactory _blobStorageFactory, _dlStorageFactory;
-        private DLClient _client;
-        private DLStorageAdapter _resultStorage;
-        private DataLakeAnalyticsJobManagementClient _jobClient;
-        private IFileSystemOperations _fs;
+        private readonly IDirectUriFactory _blobStorageFactory, _dlStorageFactory;
+        private readonly DLClient _client;
+        private readonly DLStorageAdapter _resultStorage;
+        private readonly DataLakeAnalyticsJobManagementClient _jobClient;
 
+        /**
+         * Initializes this DLJobAdapter.
+         * <param name="blobStorageFactory">The blob storage URI factory</param>
+         * <param name="client">The Data Lake client</param>
+         * <param name="resultStorage">The result storage adapter</param>
+         */
         public DLJobAdapter(IDirectUriFactory blobStorageFactory, DLClient client, DLStorageAdapter resultStorage) {
             this._blobStorageFactory = blobStorageFactory;
             this._dlStorageFactory = new DLStorageUriFactory(resultStorage);
             this._client = client;
             this._resultStorage = resultStorage;
             this._jobClient = client.JobClient;
-            this._fs = this._client.FsClient.FileSystem;
         }
 
+        /**
+         * Submits a job
+         * <param name="jobName">The name of the job</param>
+         * <param name="code">The code</param>
+         * <param name="priority">The job priority</param>
+         * <param name="parallelism">The parallelism</param>
+         */
         public JobEntityUri SubmitJob(string jobName, string code,
                                       int priority = 1, int parallelism = 1) {
             // Create a job id
@@ -118,7 +51,7 @@ namespace ChumBucket.Util {
 
             // Create an empty output file named after the job ID.
             // This will let us use the job ID to query the Data Lake storage adapter later.
-            var jobStorageUri = this.KeyToAdlUri(jobKey);
+            var jobStorageUri = KeyToAdlUri(jobKey);
             var storageFile = new StorageFile(new MemoryStream(), jobStorageUri, jobKey, "text/csv");
             this._resultStorage.Store(storageFile, JOB_RESULT_BUCKET);
 
@@ -129,16 +62,17 @@ namespace ChumBucket.Util {
             var jobInfo = this._jobClient.Job.Create(this._client.AccountName, jobId, parameters);
 
             // Return a chumbucket+job://dl/{jobKey} URI for this job.
-            return this.GuidToJobUri(jobId);
+            return GuidToJobUri(jobId);
         }
 
+        /**
+         * Returns a DLJobStatus instance from the specified JobEntityUri.
+         * <param name="uri">The URI</param>
+         * <returns>A DLJobStatus instance</returns>
+         */
         public DLJobStatus GetJobStatus(JobEntityUri uri) {
             // Get the job GUID from the URI
-            if (uri.Bucket != DATA_LAKE_AUTHORITY) {
-                throw new ArgumentException("invalid bucket");
-            }
-
-            var guid = Guid.Parse(uri.Key);
+            var guid = ValidateJobUri(uri);
             var info = this._jobClient.Job.Get(this._client.AccountName, guid);
             if (info == null) {
                 throw new KeyNotFoundException("job does not exist");
@@ -181,25 +115,57 @@ namespace ChumBucket.Util {
             }
         }
 
+        /**
+         * Returns a StorageFile from the specified JobEntityUri.
+         * <param name="uri">The URI</param>
+         * <returns>The corresponding StorageFile</returns>
+         */
         public StorageFile GetJobResult(JobEntityUri uri) {
-            if (uri.Bucket != DATA_LAKE_AUTHORITY) {
-                throw new ArgumentException("invalid bucket");
-            }
+            ValidateJobUri(uri);
 
-            var adlUri = this.KeyToAdlUri(uri.Key);
+            var adlUri = KeyToAdlUri(uri.Key);
             return this._resultStorage.Retrieve(adlUri);
         }
 
-        private JobEntityUri GuidToJobUri(Guid guid) {
+        private static Guid ValidateJobUri(JobEntityUri uri) {
+            if (uri.Bucket != DATA_LAKE_AUTHORITY) {
+                throw new ArgumentException("invalid bucket name");
+            } else {
+                try {
+                    return Guid.Parse(uri.Key);
+                } catch (Exception e) when (e is FormatException || e is ArgumentNullException) {
+                    throw new ArgumentException(e.Message);
+                }
+            }
+        }
+
+        /**
+         * Converts a GUID to a JobEntityUri.
+         * <param name="guid">The GUID</param>
+         * <returns>A JobEntityUri</returns>
+         */
+        private static JobEntityUri GuidToJobUri(Guid guid) {
             return new JobEntityUri(bucket: DATA_LAKE_AUTHORITY, key: guid.ToString());
         }
 
-        private EntityUri KeyToAdlUri(string key) {
-            return new DLEntityUri(bucket: JOB_RESULT_BUCKET, key: string.Format("{0}.csv", key));
+        /**
+         * Converts a key to an Azure Data Lake URI.
+         * <param name="key">The key</param>
+         * <returns>A DLEntityUri</returns>
+         */
+        private static EntityUri KeyToAdlUri(string key) {
+            return new DLEntityUri(bucket: JOB_RESULT_BUCKET, key: $"{key}.csv");
         }
 
-        static Regex INPUT_REGEX = new Regex(@"@in\s*\[\s*""\s*(?<key>[^""]*)""\s*\]", RegexOptions.Compiled);
+        private static readonly Regex INPUT_REGEX = new Regex(@"@in\s*\[\s*""\s*(?<key>[^""]*)""\s*\]", RegexOptions.Compiled);
 
+        /**
+         * Builds a U-SQL script with the ChumBucket preamble and postamble.
+         * <param name="jobId">The job ID</param>
+         * <param name="outputUri">The output URI</param>
+         * <param name="code">The code</param>
+         * <returns>The script</returns>
+         */
         private string BuildScript(Guid jobId, EntityUri outputUri, string code) {
             // Resolve the output URI to Data Lake Store
             var resolvedOutputUri = this._dlStorageFactory.BuildDirectUri(outputUri.Bucket, outputUri.Key);
@@ -234,16 +200,26 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
             return sb.ToString();
         }
 
+        /**
+         * Escapes quotes for insertion into C# literal strings.
+         * <param name="str">The string</param>
+         * <returns>The escaped string</returns>
+         */
         private string Escape(string str) {
             return str.Replace("\"", "\"\"");
         }
 
+        /**
+         * Resolves the specified path, returning a direct URI to the resource.
+         * <param name="path">The path</param>
+         * <returns>A direct URI</returns>
+         */
         private Uri Resolve(string path) {
             if (path.Length == 0) {
                 throw new ArgumentException("path may not be empty");
             }
 
-            string[] components = path.Split('/');
+            var components = path.Split('/');
             string bucket = null, key = null;
             if (components.Length == 1) {
                 // This references a bucket; wildcard it
@@ -254,7 +230,7 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
                 bucket = components[0];
                 key = components[1];
             } else {
-                throw new ArgumentException(string.Format("path {0} neither refers to a bucket nor a file", key));
+                throw new ArgumentException($"path {key} neither refers to a bucket nor a file");
             }
 
             if (bucket.Length == 0) {
@@ -266,6 +242,12 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
             return this._blobStorageFactory.BuildDirectUri(bucket, key);
         }
 
+        /**
+         * Builds a very detailed error message using a JobInformation instance.
+         * Assumes that the JobInformation has an error message.
+         * <param name="info">The JobInformation instance</param>
+         * <returns>A very detailed multiline error message</returns>
+         */
         private static string BuildErrorMessage(JobInformation info) {
             var builder = new StringBuilder();
             var i = 1;
@@ -301,6 +283,12 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
             return builder.ToString();
         }
 
+        /**
+         * Appends error number `idx` to `builder` using the specified `error`.
+         * <param name="idx">The index</param>
+         * <param name="error">The error details</param>
+         * <param name="builder">The StringBuilder</param>
+         */
         private static void AppendError(int idx, JobErrorDetails error, StringBuilder builder) {
             builder.AppendFormat(@"[{0}] {1}: {2}
 
@@ -311,7 +299,7 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
 {4}", idx, error.ErrorId, error.Message, error.Description, error.Details);
 
             var resolution = error.Resolution;
-            if (resolution != null && resolution.Length > 0) {
+            if (!string.IsNullOrEmpty(resolution)) {
                 builder.AppendFormat(@"
 
 === RESOLUTION ===
@@ -320,3 +308,6 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
         }
     }
 }
+ 
+ 
+ 

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using ChumBucket.Util.Uris;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ChumBucket.Util {
+namespace ChumBucket.Util.Storage {
+    /**
+     * An adapter for file storage in different locations.
+     * At minimum, a storage adapter must have an account name
+     * and a container name.
+     */
     public interface IStorageAdapter {
         /**
          * Returns the account name.
@@ -20,8 +21,7 @@ namespace ChumBucket.Util {
         string GetContainerName();
 
         /**
-         * Stores a file.
-         * Must return a unique URI for subsequent access.
+         * Stores a file in a bucket.
          * <param name="file">The file to store</param>
          * <param name="bucket">The bucket to store it in</param>
          * <returns>A unique URI for subsequent accesses</returns>

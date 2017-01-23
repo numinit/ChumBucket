@@ -1,34 +1,27 @@
 ﻿using Microsoft.Azure.Management.DataLake.Analytics;
-using Microsoft.Azure.Management.DataLake.Analytics.Models;
 using Microsoft.Azure.Management.DataLake.Store;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.Rest;
 using Microsoft.Rest.Azure.Authentication;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Web;
 
-namespace ChumBucket.Util {
+namespace ChumBucket.Util.DataLake {
+    /**
+     * Encapsulates the several clients comprising a Microsoft
+     * Azure Data Lake client.
+     */
     public class DLClient {
-        private string _accountName;
-        private ServiceClientCredentials _creds;
-        private DataLakeStoreAccountManagementClient _adlsClient;
-        private DataLakeStoreFileSystemManagementClient _adlsFsClient;
-        private DataLakeAnalyticsJobManagementClient _adlaJobClient;
+        private readonly string _accountName;
+        private readonly ServiceClientCredentials _creds;
+        private readonly DataLakeStoreAccountManagementClient _adlsClient;
+        private readonly DataLakeStoreFileSystemManagementClient _adlsFsClient;
+        private readonly DataLakeAnalyticsJobManagementClient _adlaJobClient;
 
-        public string AccountName {
-            get { return this._accountName; }
-        }
+        public string AccountName => this._accountName;
 
-        public DataLakeStoreFileSystemManagementClient FsClient {
-            get { return this._adlsFsClient; }
-        }
+        public DataLakeStoreFileSystemManagementClient FsClient => this._adlsFsClient;
 
-        public DataLakeAnalyticsJobManagementClient JobClient {
-            get { return this._adlaJobClient; }
-        }
+        public DataLakeAnalyticsJobManagementClient JobClient => this._adlaJobClient;
 
         public DLClient(string accountName, string clientSecret, string subId,
                         string clientId, string domain) {

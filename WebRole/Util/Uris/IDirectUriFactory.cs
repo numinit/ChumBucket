@@ -1,9 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
-namespace WebRole.Util {
+namespace ChumBucket.Util.Uris {
+    /**
+     * A factory interface for building direct URIs to resources.
+     */
     public interface IDirectUriFactory {
         /**
          * Builds a direct URI to a resource given a bucket and a key.

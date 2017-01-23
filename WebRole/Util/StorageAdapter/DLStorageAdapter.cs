@@ -1,27 +1,25 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Threading;
-using Microsoft.Rest;
-using Microsoft.Rest.Azure.Authentication;
-using Microsoft.Azure.Management.DataLake.Store;
-using Microsoft.Azure.Management.DataLake.StoreUploader;
-using Microsoft.Azure.Management.DataLake.Analytics;
-using Microsoft.Azure.Management.DataLake.Analytics.Models;
-using ChumBucket.Util;
+﻿using Microsoft.Azure.Management.DataLake.Store;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using ChumBucket.Util.DataLake;
+using ChumBucket.Util.Uris;
+using WebRole.Util.StorageAdapter;
 
-namespace ChumBucket.Util {
+namespace ChumBucket.Util.Storage {
+    /**
+     * An adapter for communicating with Data Lake storage.
+     */
     public class DLStorageAdapter : IStorageAdapter {
-        private DLClient _client;
-        private IFileSystemOperations _fs;
+        private readonly DLClient _client;
+        private readonly IFileSystemOperations _fs;
 
         /**
          * The "container" name.
          */
-        private string _containerName;
+        private readonly string _containerName;
 
         /**
          * A simple JSON serializable object for upload metadata
@@ -53,8 +51,10 @@ namespace ChumBucket.Util {
         }
 
         public void Store(StorageFile file, string bucket) {
-            if (!file.ContentType.Equals("text/csv")) {
+            if (file.ContentType != "text/csv") {
                 throw new ArgumentException("content type must be text/csv");
+            } else {
+                ValidationHelpers.ValidateBucketName(bucket);
             }
 
             // Create and open the upload and meta files
@@ -85,6 +85,8 @@ namespace ChumBucket.Util {
 
         public StorageFile Retrieve(EntityUri uri) {
             try {
+                ValidationHelpers.ValidateUri(uri, typeof(DLEntityUri));
+
                 // Strip the leading slash from the URI's path to get the GUID
                 var bucket = uri.Bucket;
                 var key = Path.GetFileNameWithoutExtension(uri.Key);
@@ -97,16 +99,18 @@ namespace ChumBucket.Util {
                 } else {
                     var upload = this._fs.Open(this._client.AccountName, uploadPath);
                     var meta = this._fs.Open(this._client.AccountName, metaPath);
-                    var metadata = this.ReadMeta(meta);
+                    var metadata = ReadMeta(meta);
 
                     return new StorageFile(upload, uri, metadata.Name, metadata.ContentType);
                 }
             } catch (Exception e) when (e is JsonException) {
-                throw new ArgumentException(e.Message);
+                throw new KeyNotFoundException(e.Message);
             }
         }
 
         public void Delete(EntityUri uri) {
+            ValidationHelpers.ValidateUri(uri, typeof(DLEntityUri));
+
             var bucket = uri.Bucket;
             var key = Path.GetFileNameWithoutExtension(uri.Key);
             var uploadPath = this.UploadPath(bucket, key);
@@ -133,6 +137,8 @@ namespace ChumBucket.Util {
         }
 
         public ICollection<EntityUri> ListFiles(string bucket) {
+            ValidationHelpers.ValidateBucketName(bucket);
+
             var ret = new List<EntityUri>();
             var statuses = this._fs.ListFileStatus(this._client.AccountName, this.BucketPath(bucket));
 
@@ -146,18 +152,42 @@ namespace ChumBucket.Util {
             return ret;
         }
 
+        /**
+         * Returns the path for the specified bucket
+         * <param name="bucket">The bucket</param>
+         * <returns>The absolute path, as a string</returns>
+         */
         private string BucketPath(string bucket) {
-            return string.Format("{0}/{1}", this._containerName, bucket);
+            return $"{this._containerName}/{bucket}";
         }
 
+        /**
+         * Returns a path to the uploaded file
+         * <param name="bucket">The bucket</param>
+         * <param name="key">The key</param>
+         * <returns>The absolute path, as a string</returns>
+         */
         private string UploadPath(string bucket, string key) {
             return this.AbsPath(bucket, key, "csv");
         }
 
+        /**
+         * Returns a path to the meta file
+         * <param name="bucket">The bucket</param>
+         * <param name="key">The key</param>
+         * <returns>The absolute path, as a string</returns>
+         */
         private string MetaPath(string bucket, string key) {
             return this.AbsPath(bucket, key, "json");
         }
 
+        /**
+         * Returns an absolute path given a bucket, key, and extension.
+         * <param name="bucket">The bucket</param>
+         * <param name="key">The key</param>
+         * <param name="extension">The extension</param>
+         * <returns>The absolute path, as a string</returns>
+         */
         private string AbsPath(string bucket, string key, string extension) {
             return string.Format(
                 "{0}/{1}/{2}.{3}",
@@ -166,13 +196,22 @@ namespace ChumBucket.Util {
             );
         }
 
+        /**
+         * Creates a directory if it doesn't exist.
+         * <param name="path">The path</param>
+         */
         private void Mkdir(string path) {
             if (!this._fs.PathExists(this._client.AccountName, path)) {
                 this._fs.Mkdirs(this._client.AccountName, path);
             }
         }
 
-        private Meta ReadMeta(Stream stream) {
+        /**
+         * Reads metadata from a file's meta stream
+         * <param name="stream">The stream</param>
+         * <returns>An instance of Meta</returns>
+         */
+        private static Meta ReadMeta(Stream stream) {
             using (var metaReader = new StreamReader(stream)) {
                 var json = metaReader.ReadToEnd();
                 return JsonConvert.DeserializeObject<Meta>(json);

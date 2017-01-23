@@ -1,29 +1,31 @@
-﻿using ChumBucket.Util;
-using System;
-using System.Collections.Generic;
+﻿using ChumBucket.Util.Uris;
 using System.IO;
-using System.Linq;
-using System.Web;
 
-namespace ChumBucket.Util {
+namespace ChumBucket.Util.Storage {
     public class StorageFile {
-        private Stream _stream;
-        private EntityUri _uri;
-        private string _name;
-        private string _contentType;
+        private readonly Stream _stream;
+        private readonly EntityUri _uri;
+        private readonly string _name;
+        private readonly string _contentType;
 
-        public Stream InputStream {
-            get { return this._stream; }
-        }
+        /**
+         * Returns this file's input stream.
+         */
+        public Stream InputStream => this._stream;
 
-        public EntityUri Uri {
-            get { return this._uri; }
-        }
+        /**
+         * Returns this file's EntityUri.
+         */
+        public EntityUri Uri => this._uri;
 
-        public string Name {
-            get { return this._name; }
-        }
+        /**
+         * Returns this file's name.
+         */
+        public string Name => this._name;
 
+        /**
+         * Returns a suitable MIME type for this file.
+         */
         public string ContentType {
             get {
                 if (this._name != null && this._name.EndsWith(".csv")) {
