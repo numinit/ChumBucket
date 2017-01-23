@@ -1,6 +1,7 @@
 ﻿/* @reference chumbucket/boot.js */
 /* @reference chumbucket/http_client.js */
 /* @reference chumbucket/analysis_client.js */
+/* @reference chumbucket/storage_client.js */
 /* @reference chumbucket/uploader.js */
 
 chumbucket.extend = function() {

@@ -138,6 +138,9 @@
                 delete endTimes[fileId];
                 delete deltaTimes[fileId];
                 delete bucketNames[fileId];
+
+                // Updates the list of bucket in UI - defined in boot.js
+                chumbucket.updateBucketList();
             }
         }
     };
