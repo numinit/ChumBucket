@@ -326,6 +326,7 @@
     <Content Include="Scripts\chumbucket\boot.js" />
     <Content Include="Scripts\chumbucket\http_client.js" />
     <Content Include="Scripts\chumbucket\uploader.js" />
+    <Content Include="Scripts\chumbucket\util.js" />
     <Content Include="Scripts\fineuploader\azure.fine-uploader.js" />
     <Content Include="packages.config">
       <SubType>Designer</SubType>

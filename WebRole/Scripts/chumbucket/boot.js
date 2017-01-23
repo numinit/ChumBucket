@@ -70,7 +70,10 @@ chumbucket.onBoot = function(document, options) {
                 analysisStatus.className = 'input-group-addon bg-success';
                 analysisStatus.innerHTML = '<a href="/analysis/result?uri=' + encodeURIComponent(uri) +
                     '" target="_blank">' + analysisString + '</a>';
-                analysisConsole.textContent = 'Analysis succeeded. Click the link above to view the results.';
+                analysisConsole.textContent = "Analysis succeeded. Click the link to view the results.\n\n" +
+                                              "Job duration: " + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
+                                              "Data read: " + chumbucket.Util.convertBytesToString(result['dataReadBytes']) + "\n" +
+                                              "Throughput: " + chumbucket.Util.convertBytesToString(result['throughputBytesPerSecond']) + "/s";
                 enableAnalysis();
             } else {
                 analysisStatus.className = 'input-group-addon bg-warning';

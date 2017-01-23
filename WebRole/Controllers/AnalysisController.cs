@@ -66,8 +66,8 @@ namespace WebRole.Controllers {
                         status = job.Status,
                         startTime = job.StartTime.ToString("o"),
                         durationMs = (int)Math.Floor(job.Duration.TotalMilliseconds),
-                        bytesRead = job.Succeeded ? job.Bytes.Value : -1,
-                        throughput = job.Succeeded ? job.Throughput.Value : -1.0,
+                        dataReadBytes = job.Succeeded ? job.Bytes.Value : -1,
+                        throughputBytesPerSecond = job.Succeeded ? job.Throughput.Value : -1.0,
                         error = job.Failed ? job.Error : null
                     }
                 }, JsonRequestBehavior.AllowGet);

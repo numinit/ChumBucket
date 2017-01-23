@@ -7,6 +7,7 @@
     this._templateClass = options['templateClass'] || 'qq-template-manual-trigger';
 
     var startTimes = {}, endTimes = {}, deltaTimes = {}, bucketNames = {};
+
     // Start the counter at 19 so that it updates the UI the first time a chunk is sent
     var uiUpdateFreq = 20;
     var uiUpdateCounter = uiUpdateFreq;
@@ -42,7 +43,7 @@
             acceptFiles: ['text/csv']
         },
         deleteFile: {
-            enabled: false
+            enabled: true
         },
         chunking: {
             enabled: true,
@@ -97,14 +98,14 @@
                 // Record the current time for the file
                 var curDate = new Date();
                 var timeElapsed = (curDate.getTime() - startTimes[fileId].getTime()) / 1000;
-                uploadTime.textContent = convertSecondsToString(timeElapsed);
+                uploadTime.textContent = chumbucket.Util.convertSecondsToString(timeElapsed);
 
                 // Record the average upload speed
-                uploadSpeed.textContent = convertBytesToString(uploadedBytes / timeElapsed) + " per second";
+                uploadSpeed.textContent = chumbucket.Util.convertBytesToString(uploadedBytes / timeElapsed) + " per second";
 
                 // Record the number of bytes uploaded
-                bytesUploaded.textContent = convertBytesToString(uploadedBytes) + "/" +
-                    convertBytesToString(totalBytes);
+                bytesUploaded.textContent = chumbucket.Util.convertBytesToString(uploadedBytes) + "/" +
+                    chumbucket.Util.convertBytesToString(totalBytes);
             },
             onCancel: function(fileId) {
                 // Get the row for this file from the timing table
@@ -128,7 +129,7 @@
                 var status = curRow.cells[1];
                 var uploadTime = curRow.cells[2];
                 status.textContent = success ? "Complete" : "Failed";
-                uploadTime.textContent = convertSecondsToString(deltaTimes[fileId]);
+                uploadTime.textContent = chumbucket.Util.convertSecondsToString(deltaTimes[fileId]);
 
                 // Reset the UI update counter
                 uiUpdateCounter = uiUpdateFreq - 1;
@@ -174,39 +175,3 @@ chumbucket.Uploader.prototype.getTemplateClass = function() {
 chumbucket.Uploader.prototype.getUploader = function() {
     return this._uploader;
 };
-
-convertBytesToString = function (bytes) {
-    if (bytes < 1024) {
-        // Less than a KB
-        return bytes + " bytes";
-    } else if (bytes < 1024 * 1024) {
-        // Less than a MB
-        var kilobytes = bytes / 1024;
-        var roundedKilobytes = Math.round(kilobytes * 10) / 10;
-        return roundedKilobytes + " kB";
-    } else if (bytes < 1024 * 1024 * 1024) {
-        // Less than a GB
-        var megabytes = bytes / 1024 / 1024;
-        var roundedMegabytes = Math.round(megabytes * 10) / 10;
-        return roundedMegabytes + " MB";
-    } else {
-        // Multiple GB
-        var gigabytes = bytes / 1024 / 1024 / 1024;
-        var roundedGigabytes = Math.round(gigabytes * 10) / 10;
-        return roundedGigabytes + " GB";
-    }
-}
-
-convertSecondsToString = function(seconds) {
-    if (seconds < 60) {
-        // Less than a minute
-        var roundedSeconds = Math.round(seconds * 10) / 10;
-        return roundedSeconds + " s";
-    } else {
-        // Multiple minutes
-        var minutes = Math.floor(seconds / 60);
-        var leftoverSeconds = seconds % 60;
-        var roundedLeftoverSeconds = convertSecondsToString(leftoverSeconds);
-        return minutes + " m " + roundedLeftoverSeconds;
-    }
-}
