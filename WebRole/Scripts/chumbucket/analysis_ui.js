@@ -54,6 +54,7 @@ chumbucket.AnalysisUi.prototype.boot = function() {
         }
 
         ref.getAnalysisClient().submitAndPoll(analysisJobName, analysisCode, function(state, result, uri) {
+            uri = chumbucket.EntityUri.parse(uri);
             var analysisString = state.split(/_+/g).map(function(s) {
                 return s[0].toUpperCase() + s.slice(1).toLowerCase();
             }).join(' ');
@@ -66,7 +67,7 @@ chumbucket.AnalysisUi.prototype.boot = function() {
                 enableAnalysis();
             } else if (state === 'SUCCEEDED') {
                 var a = document.createElement('a');
-                a.href = '/analysis/result?uri=' + encodeURIComponent(uri);
+                a.href = '/analysis/result?uri=' + encodeURIComponent(uri.toString());
                 a.target = '_blank';
                 a.textContent = analysisString;
                 analysisStatus.textContent = '';
@@ -76,13 +77,16 @@ chumbucket.AnalysisUi.prototype.boot = function() {
                 analysisConsole.textContent = "Analysis succeeded. Click the link to view the results.\n\n" +
                     "Job duration: " + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
                     "Data read: " + chumbucket.Util.convertBytesToString(result['dataReadBytes']) + "\n" +
-                    "Throughput: " + chumbucket.Util.convertBytesToString(result['throughputBytesPerSecond']) + "/s";
+                    "Throughput: " + chumbucket.Util.convertBytesToString(result['throughputBytesPerSecond']) + "/s\n" +
+                    "UUID: " + uri.getLeaf();
                 enableAnalysis();
             } else {
                 analysisStatus.classList.remove('success', 'danger');
                 analysisStatus.classList.add('warning');
                 analysisStatus.textContent = analysisString;
-                analysisConsole.textContent = uri + ' is in progress...';
+                analysisConsole.textContent = "Analysis is in progress. Updating periodically.\n\n" +
+                    'Elapsed time: ' + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
+                    "UUID: " + uri.getLeaf();
             }
         });
     });
