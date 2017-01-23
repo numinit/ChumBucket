@@ -96,7 +96,7 @@ chumbucket.AnalysisUi.prototype.boot = function() {
                     "Start time: " + chumbucket.Util.formatTime(startTime) + "\n" +
                     "Job duration: " + chumbucket.Util.convertSecondsToString(duration) + "\n" +
                     "Data read: " + chumbucket.Util.convertBytesToString(dataRead) + "\n" +
-                    "Total throughput (inc. queuing): " + chumbucket.Util.convertBytesToString(totalThroughput) + "/s\n" +
+                    "Total throughput (inc. queueing): " + chumbucket.Util.convertBytesToString(totalThroughput) + "/s\n" +
                     "Processing throughput: " + chumbucket.Util.convertBytesToString(throughput) + "/s\n" +
                     "UUID: " + uuid;
                 enableAnalysis();

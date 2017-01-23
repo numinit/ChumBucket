@@ -308,6 +308,7 @@
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Util\DataLake\ConcatStream.cs" />
     <Compile Include="Util\DataLake\DLJobStatus.cs" />
     <Compile Include="Util\StorageAdapter\BlobStorageAdapter.cs" />
     <Compile Include="Util\StorageAdapter\ValidationHelpers.cs" />

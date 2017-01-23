@@ -11,6 +11,7 @@ using System.Web.Mvc;
 using ChumBucket.Util.DataLake;
 using ChumBucket.Util.Storage;
 using ChumBucket.Util.Uris;
+using WebRole.Util.DataLake;
 
 namespace WebRole.Controllers {
     [RoutePrefix("analysis")]
@@ -100,10 +101,23 @@ namespace WebRole.Controllers {
                 var job = this._job.GetJobStatus(uri);
                 if (job.Succeeded) {
                     var file = this._job.GetJobResult(uri);
+                    var totalThroughput = (long) Math.Round(job.Bytes.Value / job.Duration.TotalSeconds);
+                    var processingThroughput = (long) Math.Round(job.Throughput.Value);
+                    var header = $@"# chumbucket job result file
+# Job name:   {job.Name}
+# Job URI:    {job.Uri}
+# Submitted:  {job.StartTime:o}
+# Duration:   {job.Duration:hh'h 'mm'm 'ss\s}
+# Bytes read: {job.Bytes}
+# Throughput: {totalThroughput} bytes/sec total; {processingThroughput} bytes/sec processing
+
+";
+                    var headerStream = new MemoryStream(Encoding.UTF8.GetBytes(header));
+                    var stream = new ConcatStream(headerStream, file.InputStream);
                     Response.StatusCode = 200;
 
                     // Force the file to appear in the web browser with text/plain content type
-                    return new FileStreamResult(file.InputStream, "text/plain");
+                    return new FileStreamResult(stream, "text/plain");
                 } else {
                     throw new KeyNotFoundException("job is unfinished");
                 }
