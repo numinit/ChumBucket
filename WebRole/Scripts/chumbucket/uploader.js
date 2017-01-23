@@ -8,18 +8,17 @@
 
     var startTimes = {}, endTimes = {}, deltaTimes = {}, bucketNames = {};
     // Start the counter at 19 so that it updates the UI the first time a chunk is sent
-    var uiUpdateCounter = 19;
     var uiUpdateFreq = 20;
+    var uiUpdateCounter = uiUpdateFreq;
 
     var ref = this;
     var config = {
         element: ref.getRootElement(),
         template: ref.getTemplateClass(),
         blobProperties: {
-            name: function(id) {
+            name: function(fileId) {
                 var fn = function(resolve, reject) {
-                    bucketNames[ref.getUploader().getName(id)] = ref.getCurrentBucket();
-                    resolve(ref.getCurrentBucket() + "/" + ref.getUploader().getName(id));
+                    resolve(ref.getCurrentBucket() + "/" + ref.getUploader().getName(fileId));
                 };
                 return new Promise(fn);
             }
@@ -71,6 +70,9 @@
                 newRow.insertCell(4);
 
                 // Write the filename and status to the new row
+                bucketNames[fileId] = ref.getCurrentBucket();
+                console.log("bucketNames:");
+                console.log(bucketNames);
                 if (!(fileId in bucketNames)) {
                     bucketNames[fileId] = "default";
                 }
@@ -122,6 +124,9 @@
                 var uploadTime = curRow.cells[2];
                 status.textContent = success ? "Complete" : "Failed";
                 uploadTime.textContent = deltaTimes[fileId] + " seconds";
+
+                // Reset the UI update counter
+                uiUpdateCounter = uiUpdateFreq - 1;
 
                 // Get rid of the old info
                 delete startTimes[fileId];
