@@ -74,7 +74,7 @@ namespace ChumBucket.Util {
             var blobs = this._blobContainer.ListBlobs();
             var buckets = blobs.Where(b => b as CloudBlobDirectory != null);
             foreach (var bucket in buckets) {
-                //bucket.Uri
+                list.Add(this.GetBlobStorageHandle(bucket.Uri, bucketsOnly: true));
             }
             return list;
         }
@@ -84,7 +84,7 @@ namespace ChumBucket.Util {
             var directory = this._blobContainer.GetDirectoryReference(bucket);
             var blobs = directory.ListBlobs().Where(b => b as CloudBlockBlob != null);
             foreach (var blob in blobs) {
-
+                list.Add(this.GetBlobStorageHandle(blob.Uri));
             }
             return list;
         }
@@ -117,17 +117,32 @@ namespace ChumBucket.Util {
          * If there is an issue with the given blob URI, throws a SecurityException.
          * <param name="blobUri">The blob URI</param>
          * <param name="verb">The HTTP verb</param>
+         * <param name="allowedVerbs">The allowed HTTP verbs</param>
          * <param name="expirationMins">The expiration time, in minutes</param>
          * <returns>A SAS URI</returns>
          */
-        public Uri GetSasForBlob(Uri blobUri, string verb, int expirationMins = 15) {
+        public Uri GetSasForBlob(Uri blobUri, string verb, string[] allowedVerbs, int expirationMins = 15) {
             var entityUri = this.GetBlobStorageHandle(blobUri);
             var bucket = this._blobContainer.GetDirectoryReference(entityUri.Bucket);
             var blob = bucket.GetBlockBlobReference(entityUri.Key);
-            var permission = SharedAccessBlobPermissions.Write;
+            verb = verb.ToUpperInvariant();
+            if (!allowedVerbs.Contains(verb)) {
+                throw new SecurityException("unauthorized HTTP verb");
+            }
 
-            if (verb == "DELETE") {
-                permission = SharedAccessBlobPermissions.Delete;
+            SharedAccessBlobPermissions permission = SharedAccessBlobPermissions.None;
+            switch (verb) {
+                case "GET":
+                    permission = SharedAccessBlobPermissions.Read;
+                    break;
+                case "PUT":
+                    permission = SharedAccessBlobPermissions.Write;
+                    break;
+                case "DELETE":
+                    permission = SharedAccessBlobPermissions.Delete;
+                    break;
+                default:
+                    throw new SecurityException("unsupported HTTP verb");
             }
 
             // Expire their token after 15 minutes
@@ -140,6 +155,10 @@ namespace ChumBucket.Util {
             return new Uri(string.Format("{0}{1}", rewrittenUri, sas));
         }
 
+        public Uri GetSasForBlob(BlobStorageEntityUri blobUri, string verb, string[] allowedVerbs, int expirationMins = 15) {
+            return this.GetSasForBlob(this._factory.BuildDirectHttpsUri(blobUri.Bucket, blobUri.Key), verb, allowedVerbs, expirationMins);
+        }
+
         private static Regex BLOB_CORE_REGEX = new Regex(@"^(?<account>[^\.]+)\.blob\.core\.windows\.net$", RegexOptions.Compiled);
 
         /**
@@ -149,7 +168,7 @@ namespace ChumBucket.Util {
          * <param name="blobUri">The blob URI</param>
          * <returns>The corresponding BlobStorageEntityUri</returns>
          */
-        public BlobStorageEntityUri GetBlobStorageHandle(Uri blobUri) {
+        public BlobStorageEntityUri GetBlobStorageHandle(Uri blobUri, bool bucketsOnly = false) {
             // Ensure that we're signing something reasonable.
             // The URI looks something like: https://{account}.blob.core.windows.net/{container}/{bucket}/{key}
             if (blobUri.Scheme != "https") {
@@ -166,10 +185,11 @@ namespace ChumBucket.Util {
                 throw new SecurityException("invalid account name");
             }
 
-            // Remove the leading slash
-            var path = blobUri.AbsolutePath.Substring(1);
+            // Remove the leading slash and any trailing slashes
+            var path = blobUri.AbsolutePath.TrimStart('/').TrimEnd('/');
             var components = path.Split('/');
-            if (components.Length != 3) {
+            if (bucketsOnly && components.Length != 2 ||
+                !bucketsOnly && components.Length != 3) {
                 throw new SecurityException("invalid number of path components");
             } else if (components[0] != this._blobContainer.Name) {
                 throw new SecurityException("invalid container name");
@@ -184,7 +204,11 @@ namespace ChumBucket.Util {
             }
 
             // All done
-            return new BlobStorageEntityUri(bucket: bucketName, key: components[2]);
+            if (bucketsOnly) {
+                return new BlobStorageEntityUri(bucket: bucketName);
+            } else {
+                return new BlobStorageEntityUri(bucket: bucketName, key: components[2]);
+            }
         }
 
         /* Bucket names must start with a letter */
