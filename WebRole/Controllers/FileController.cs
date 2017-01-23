@@ -27,11 +27,16 @@ namespace ChumBucket.Controllers {
         [Route("query")]
         public ActionResult Query() {
             try {
-                // /query?uri={uri}
+                // Give them back a direct SAS URI.
                 var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
-                StorageFile file = this._blobAdapter.Retrieve(uri);
+                var sasUri = this._blobAdapter.GetSasForBlob(uri, Request.HttpMethod, new[] {"GET"}, 60);
+
                 Response.StatusCode = 200;
-                return new FileStreamResult(file.InputStream, file.ContentType);
+                return Json(new {
+                    result = new {
+                        uri = sasUri.ToString()
+                    }
+                }, JsonRequestBehavior.AllowGet);
             } catch (Exception e) when (e is ArgumentException || e is FormatException) {
                 // Bad request
                 Response.StatusCode = 400;
@@ -48,13 +53,48 @@ namespace ChumBucket.Controllers {
         }
 
         [HttpGet]
+        [Route("listBuckets")]
+        public ActionResult ListBuckets() {
+            var buckets = this._blobAdapter.ListBuckets().Select(x => x.ToString());
+
+            Response.StatusCode = 200;
+            return Json(new {
+                result = new {
+                    uris = buckets
+                }
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        [HttpGet]
+        [Route("listFilesInBucket")]
+        public ActionResult ListFilesInBucket() {
+            try {
+                var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
+                var files = this._blobAdapter.ListFiles(uri.Bucket).Select(x => x.ToString());
+
+                Response.StatusCode = 200;
+                return Json(new {
+                    result = new {
+                        uris = files
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            } catch (Exception e) when (e is ArgumentException || e is FormatException) {
+                // Bad request
+                Response.StatusCode = 400;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
         [Route("sas")]
         public ActionResult Sas() {
             try {
                 var blobUri = new Uri(Request.QueryString["bloburi"]);
                 var verb = Request.QueryString["_method"];
 
-                var sasUri = this._blobAdapter.GetSasForBlob(blobUri, verb);
+                var sasUri = this._blobAdapter.GetSasForBlob(blobUri, verb, new[] {"PUT", "DELETE"});
                 Response.StatusCode = 200;
                 return Content(sasUri.ToString(), "text/plain");
             } catch (SecurityException e) {
