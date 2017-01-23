@@ -27,10 +27,10 @@
             endpoint: ref.getUploadEndpoint(),
         },
         signature: {
-            endpoint: '/file/sas'
+            endpoint: '/file/uploadSas'
         },
         uploadSuccess: {
-            endpoint: '/file/success',
+            endpoint: '/file/uploadSuccess',
             params: {
                 mimeType: 'text/csv'
             }
