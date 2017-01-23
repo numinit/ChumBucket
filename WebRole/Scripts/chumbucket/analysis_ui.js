@@ -68,6 +68,8 @@ chumbucket.AnalysisUi.prototype.boot = function() {
                 var a = document.createElement('a');
                 a.href = '/analysis/result?uri=' + encodeURIComponent(uri);
                 a.target = '_blank';
+                a.textContent = analysisString;
+                analysisStatus.textContent = '';
                 analysisStatus.classList.remove('danger', 'warning');
                 analysisStatus.classList.add('success');
                 analysisStatus.appendChild(a);
