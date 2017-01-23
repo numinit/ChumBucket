@@ -133,6 +133,9 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
                 status.textContent = "In Progress";
             },
             onProgress: function(fileId, name, uploadedBytes, totalBytes) {
+                fileUploadedBytes[fileId] = uploadedBytes;
+                fileTotalBytes[fileId] = totalBytes;
+
                 // Only update the UI every 20 times onProgress is called
                 uiUpdateCounter++;
                 if (uiUpdateCounter >= uiUpdateFreq) {
@@ -141,8 +144,6 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
                     return;
                 }
 
-                fileUploadedBytes[fileId] = uploadedBytes;
-                fileTotalBytes[fileId] = totalBytes;
                 updateProgress(fileId);
             },
             onCancel: function(fileId) {
@@ -152,7 +153,6 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
 
                 // Set the status for the file to cancelled
                 status.textContent = "Cancelled";
-
                 cleanUp(fileId);
             },
             onComplete: function(fileId, name, responseJson) {
