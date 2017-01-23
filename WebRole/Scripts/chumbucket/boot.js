@@ -9,12 +9,59 @@ chumbucket['boot'] = function(document, options) {
     chumbucket.booted_ = true;
 };
 
+function _updateFileListForBucket(result) {
+    var fileList = result.getResult()['uris'];
+    var storageContentTable = document.querySelector('#file-list');
+    var rows = storageContentTable.rows;
+
+    for (var rowIndex = rows.length - 1; rowIndex > 0; rowIndex--) {
+        storageContentTable.deleteRow(rowIndex);
+    }
+
+    fileList.forEach(function (uri) {
+        var row = storageContentTable.insertRow(-1);
+        var cell0 = row.insertCell(0);
+        cell0.innerHTML = uri;
+        cell0.style.textAlign = "left";
+    });
+};
+
+chumbucket.updateFilesListForBucket = function (uri) {
+    chumbucket._storageClient.listFilesInBucket(uri).then(_updateFileListForBucket);
+};
+
+function _updateBucketList(result) {
+    var bucketList = result.getResult()['uris'];
+    var storageContentTable = document.querySelector('#bucket-list');
+    var rows = storageContentTable.rows;
+
+    for (var rowIndex = rows.length - 1; rowIndex > 0; rowIndex--) {
+        storageContentTable.deleteRow(rowIndex);
+    }  
+ 
+    bucketList.forEach(function (uri) {
+        var row = storageContentTable.insertRow(-1);
+        var cell0 = row.insertCell(0);
+        cell0.innerHTML = uri;
+        cell0.style.textAlign = "left";
+
+        row.addEventListener('click', function () {
+            chumbucket.updateFilesListForBucket(uri);
+        });
+    });
+};
+
+chumbucket.updateBucketList = function () {
+    chumbucket._storageClient.listBuckets().then(_updateBucketList);
+};
+
 chumbucket.onBoot = function(document, options) {
     var uploader = new chumbucket.Uploader(document, {
         'uploadEndpoint': options['uploadEndpoint'],
         'rootElement': '#upload',
         'timingTable': '#upload-timing'
     });
+
     var uploadButton = document.querySelector('#upload-submit');
     uploadButton.addEventListener('click', function(ev) {
         var bucketName = document.querySelector('#bucket-name').value || '';
@@ -23,6 +70,10 @@ chumbucket.onBoot = function(document, options) {
     });
 
     var httpClient = new chumbucket.HTTPClient();
+    var storageClient = new chumbucket.StorageClient(httpClient);
+    chumbucket._storageClient = storageClient;
+    chumbucket.updateBucketList();
+
     var analysisClient = new chumbucket.AnalysisClient(httpClient);
     var analysisButton = document.querySelector('#analysis-submit');
     analysisButton.addEventListener('click', function(ev) {
