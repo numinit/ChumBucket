@@ -3,6 +3,7 @@
 chumbucket.Util.convertBytesToString = function(bytes) {
     if (bytes < 1024) {
         // Less than a KB
+        bytes = Math.round(bytes);
         return bytes + (bytes === 1 ? " byte" : " bytes");
     } else if (bytes < 1024 * 1024) {
         // Less than a MB

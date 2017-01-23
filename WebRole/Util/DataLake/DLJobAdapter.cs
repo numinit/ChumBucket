@@ -78,6 +78,7 @@ namespace ChumBucket.Util.DataLake {
                 throw new KeyNotFoundException("job does not exist");
             }
 
+            var name = info.Name;
             DateTime startTime = info.SubmitTime.Value.DateTime;
             DateTime? endTime = null;
             var state = info.State.Value;
@@ -91,7 +92,7 @@ namespace ChumBucket.Util.DataLake {
 
             if (info.Result.HasValue && info.Result.Value == JobResult.Failed) {
                 // The job failed
-                return new DLJobStatus(uri: uri, status: statusString,
+                return new DLJobStatus(uri: uri, name: name, status: statusString,
                                        startTime: startTime, endTime: endTime,
                                        error: BuildErrorMessage(info));
             } else if (info.Result.HasValue && info.Result.Value == JobResult.Succeeded) {
@@ -105,12 +106,12 @@ namespace ChumBucket.Util.DataLake {
                         seconds += stage.TotalSucceededTime.Value.TotalSeconds;
                     }
                 }
-                return new DLJobStatus(uri: uri, status: statusString,
+                return new DLJobStatus(uri: uri, name: name, status: statusString,
                                        startTime: startTime, endTime: endTime,
                                        bytes: bytes, throughput: bytes / seconds);
             } else {
                 // The job is in progress
-                return new DLJobStatus(uri: uri, status: statusString,
+                return new DLJobStatus(uri: uri, name: name, status: statusString,
                                        startTime: startTime, endTime: endTime);
             }
         }

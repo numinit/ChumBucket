@@ -74,10 +74,17 @@ chumbucket.AnalysisUi.prototype.boot = function() {
                 analysisStatus.classList.remove('danger', 'warning');
                 analysisStatus.classList.add('success');
                 analysisStatus.appendChild(a);
+
+                var dataRead = result['dataReadBytes'];
+                var duration = result['durationMs'] / 1000;
+                var throughput = result['throughputBytesPerSecond'];
                 analysisConsole.textContent = "Analysis succeeded. Click the link to view the results.\n\n" +
-                    "Job duration: " + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
-                    "Data read: " + chumbucket.Util.convertBytesToString(result['dataReadBytes']) + "\n" +
-                    "Throughput: " + chumbucket.Util.convertBytesToString(result['throughputBytesPerSecond']) + "/s\n" +
+                    "Job name: " + result['name'] + "\n" +
+                    "Start time: " + result['startTime'] + "\n" +
+                    "Job duration: " + chumbucket.Util.convertSecondsToString(duration) + "\n" +
+                    "Data read: " + chumbucket.Util.convertBytesToString(dataRead) + "\n" +
+                    "Total throughput (inc. queuing): " + chumbucket.Util.convertBytesToString(dataRead / duration) + "/s\n" +
+                    "Processing throughput: " + chumbucket.Util.convertBytesToString(throughput) + "/s\n" +
                     "UUID: " + uri.getLeaf();
                 enableAnalysis();
             } else {
@@ -85,7 +92,9 @@ chumbucket.AnalysisUi.prototype.boot = function() {
                 analysisStatus.classList.add('warning');
                 analysisStatus.textContent = analysisString;
                 analysisConsole.textContent = "Analysis is in progress. Updating periodically.\n\n" +
-                    'Elapsed time: ' + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
+                    "Job name: " + result['name'] + "\n" +
+                    "Start time: " + result['startTime'] + "\n" +
+                    "Elapsed time: " + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
                     "UUID: " + uri.getLeaf();
             }
         });

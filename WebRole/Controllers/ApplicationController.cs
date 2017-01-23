@@ -9,9 +9,5 @@ namespace ChumBucket.Controllers {
         public ActionResult Index() {
             return View();
         }
-
-        public ActionResult Analysis() {
-            return View();
-        }
     }
 }

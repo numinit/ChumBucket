@@ -7,6 +7,7 @@ namespace ChumBucket.Util.DataLake {
      */
     public class DLJobStatus {
         private readonly JobEntityUri _uri;
+        private readonly string _name;
         private readonly string _status;
         private readonly DateTime _startTime;
         private readonly DateTime? _endTime;
@@ -35,6 +36,11 @@ namespace ChumBucket.Util.DataLake {
          * <see cref="JobEntityUri"/>
          */
         public JobEntityUri Uri => this._uri;
+
+        /**
+         * Returns the name of this job.
+         */
+        public string Name => this._name;
 
         /**
          * Returns the status of this job.
@@ -85,6 +91,7 @@ namespace ChumBucket.Util.DataLake {
         /**
          * Initializes this DLJobStatus.
          * <param name="uri">The URI</param>
+         * <param name="name">The name</param>
          * <param name="status">The status string</param>
          * <param name="startTime">The start time</param>
          * <param name="endTime">The end time</param>
@@ -92,11 +99,12 @@ namespace ChumBucket.Util.DataLake {
          * <param name="throughput">The total throughput</param>
          * <param name="error">The error, if present</param>
          */
-        public DLJobStatus(JobEntityUri uri, string status, DateTime startTime,
+        public DLJobStatus(JobEntityUri uri, string name, string status, DateTime startTime,
                            DateTime? endTime = null,
                            long? bytes = null, double? throughput = null,
                            string error = null) {
             this._uri = uri;
+            this._name = name;
             this._status = status;
             this._startTime = startTime;
             this._endTime = endTime;

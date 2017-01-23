@@ -68,6 +68,7 @@ namespace WebRole.Controllers {
                 return Json(new {
                     result = new {
                         uri = job.Uri.ToString(),
+                        name = job.Name,
                         status = job.Status,
                         startTime = job.StartTime.ToString("o"),
                         durationMs = (int)Math.Floor(job.Duration.TotalMilliseconds),

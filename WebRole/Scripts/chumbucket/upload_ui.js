@@ -57,6 +57,16 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
             chumbucket.Util.convertBytesToString(totalBytes);
     };
 
+    var cleanUp = function(fileId) {
+        // Get rid of the old info
+        delete startTimes[fileId];
+        delete endTimes[fileId];
+        delete deltaTimes[fileId];
+        delete bucketNames[fileId];
+        delete fileUploadedBytes[fileId];
+        delete fileTotalBytes[fileId];
+    };
+
     var config = {
         element: ref.getRootElement(),
         template: ref.getTemplateClass(),
@@ -142,6 +152,8 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
 
                 // Set the status for the file to cancelled
                 status.textContent = "Cancelled";
+
+                cleanUp(fileId);
             },
             onComplete: function(fileId, name, responseJson) {
                 // Determine whether the upload was successful
@@ -165,16 +177,11 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
                 // Reset the UI update counter
                 uiUpdateCounter = uiUpdateFreq - 1;
 
-                // Get rid of the old info
-                delete startTimes[fileId];
-                delete endTimes[fileId];
-                delete deltaTimes[fileId];
-                delete bucketNames[fileId];
-                delete fileUploadedBytes[fileId];
-                delete fileTotalBytes[fileId];
-
-                // Updates the list of buckets
+                // Update the list of buckets
                 chumbucket.getRegistry('storage').updateBucketList(true);
+
+                // Clean up
+                cleanUp(fileId);
             }
         }
     };
