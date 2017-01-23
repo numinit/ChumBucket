@@ -168,7 +168,7 @@ namespace ChumBucket.Controllers {
                 var resultUri = this._blobAdapter.FinalizeUploadedBlob(requestUri, fileName, mimeType);
 
                 // Unzip if necessary
-                if (mimeType == "application/zip") {
+                if (mimeType == "application/zip" || mimeType == "application/x-zip-compressed") {
                     this.Unzip(resultUri);
                 }
 
