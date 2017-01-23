@@ -338,7 +338,7 @@
     <Content Include="Stylesheets\bootstrap\bootstrap-theme.css" />
     <Content Include="Stylesheets\bootstrap\bootstrap.css" />
     <Content Include="Stylesheets\bootstrap\datepicker.css" />
-    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.svg" />
+    <Content Include="Stylesheets\fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Scripts\bootstrap\bootstrap-datepicker.js" />
     <Content Include="Scripts\bootstrap\bootstrap-select.js" />
     <Content Include="Scripts\bootstrap\bootstrap.js" />
@@ -368,12 +368,13 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
+    <Folder Include="Content\bootstrap\" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.eot" />
-    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.ttf" />
-    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.woff" />
-    <Content Include="Content\bootstrap\fonts\glyphicons-halflings-regular.woff2" />
+    <Content Include="Stylesheets\fonts\glyphicons-halflings-regular.eot" />
+    <Content Include="Stylesheets\fonts\glyphicons-halflings-regular.ttf" />
+    <Content Include="Stylesheets\fonts\glyphicons-halflings-regular.woff" />
+    <Content Include="Stylesheets\fonts\glyphicons-halflings-regular.woff2" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="App_Start\AzureConfig.cs.example" />

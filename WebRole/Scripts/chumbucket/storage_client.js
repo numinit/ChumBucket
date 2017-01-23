@@ -13,3 +13,7 @@ chumbucket.StorageClient.prototype.listFilesInBucket = function (uri) {
 chumbucket.StorageClient.prototype.getDirectFileUri = function (uri) {
     return this._http.get('file/getDirectUri', { 'uri': uri });
 };
+
+chumbucket.StorageClient.prototype.deleteFileByUri = function (uri) {
+    return this._http.delete('file/delete', { 'uri': uri });
+};

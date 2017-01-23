@@ -21,10 +21,23 @@ function _updateFileListForBucket(result) {
     fileList.forEach(function (uri) {
         var row = storageContentTable.insertRow(-1);
         var cell0 = row.insertCell(0);
+        var cell1 = row.insertCell(1);
+
         cell0.style.textAlign = "left";
         chumbucket._storageClient.getDirectFileUri(uri).then(function(result) {
             var fileUri = result.getResult()['uri'];
             cell0.innerHTML = "<a href=" + fileUri + ">" + uri + "</a>";
+
+            cell1.innerHTML = "<span class='glyphicon glyphicon-remove'></span>";
+            cell1.addEventListener('click', function() {
+                chumbucket._storageClient.deleteFileByUri(uri).then(function () {
+                    var bucketList = chumbucket.updateBucketList();
+
+                    for (var uriIndex = 0; uriIndex < bucketList.length; uriIndex++) {
+                        chumbucket.updateFilesListForBucket(bucketList[uriIndex]);
+                    }
+                });
+            });
         });
     });
 };
@@ -52,10 +65,12 @@ function _updateBucketList(result) {
             chumbucket.updateFilesListForBucket(uri);
         });
     });
+
+    return bucketList;
 };
 
 chumbucket.updateBucketList = function () {
-    chumbucket._storageClient.listBuckets().then(_updateBucketList);
+    return chumbucket._storageClient.listBuckets().then(_updateBucketList);
 };
 
 chumbucket.onBoot = function(document, options) {
