@@ -36,3 +36,43 @@ chumbucket.Util.convertSecondsToString = function(seconds) {
         return minutes + "m " + roundedLeftoverSeconds;
     }
 };
+
+chumbucket.Util.leftPad = function(n, length, padding) {
+    var str = n + '';
+    while (str.length < length) {
+        str = padding + str;
+    }
+    return str;
+};
+
+chumbucket.Util.formatTime = function(time) {
+    return chumbucket.Util.formatTimeComponents(
+        time.getFullYear(),
+        time.getMonth() + 1,
+        time.getDate(),
+        time.getHours(),
+        time.getMinutes(),
+        time.getSeconds()
+    );
+};
+
+chumbucket.Util.formatTimeUtc = function(time) {
+    return chumbucket.Util.formatTimeComponents(
+        time.getUTCFullYear(),
+        time.getUTCMonth() + 1,
+        time.getUTCDate(),
+        time.getUTCHours(),
+        time.getUTCMinutes(),
+        time.getUTCSeconds()
+    );
+};
+
+chumbucket.Util.formatTimeComponents = function(year, month, day, hour, min, sec) {
+    // JS is like violence: if it doesn't work, you aren't using enough of it
+    return chumbucket.Util.leftPad(year, 4, '0') + '-' +
+        chumbucket.Util.leftPad(month, 2, '0') + '-' +
+        chumbucket.Util.leftPad(day, 2, '0') + ' ' +
+        chumbucket.Util.leftPad(hour, 2, '0') + ':' +
+        chumbucket.Util.leftPad(min, 2, '0') + ':' +
+        chumbucket.Util.leftPad(sec, 2, '0');
+};
