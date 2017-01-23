@@ -341,6 +341,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Scripts\promise\promise.js" />
     <Content Include="Scripts\uri\uri.js" />
     <Content Include="Stylesheets\bootstrap\bootstrap-select.css" />
     <Content Include="Stylesheets\bootstrap\bootstrap-theme.css" />
