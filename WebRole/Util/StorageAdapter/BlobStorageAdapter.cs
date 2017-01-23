@@ -175,7 +175,7 @@ namespace ChumBucket.Util.Storage {
                     throw new SecurityException("unsupported HTTP verb");
             }
 
-            // Expire their token after 15 minutes
+            // Expire their token after some time
             var sas = blob.GetSharedAccessSignature(new SharedAccessBlobPolicy() {
                 Permissions = permission,
                 SharedAccessExpiryTime = DateTime.UtcNow.AddMinutes(expirationMins),

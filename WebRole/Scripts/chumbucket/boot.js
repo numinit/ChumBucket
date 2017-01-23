@@ -1,156 +1,60 @@
-﻿var chumbucket = (this['chumbucket'] = this['chumbucket'] || {});
+﻿var chumbucket = (window['chumbucket'] = window['chumbucket'] || {});
 
 chumbucket['boot'] = function(document, options) {
     options = options || {};
     if (chumbucket.booted_) {
-        return;
+        throw new Error('already booted');
     }
-    chumbucket.onBoot(document, options);
+    chumbucket.onBoot_(document, options);
     chumbucket.booted_ = true;
 };
 
-function _updateFileListForBucket(result) {
-    var fileList = result.getResult()['uris'];
-    var storageContentTable = document.querySelector('#file-list');
-    var rows = storageContentTable.rows;
-
-    for (var rowIndex = rows.length - 1; rowIndex > 0; rowIndex--) {
-        storageContentTable.deleteRow(rowIndex);
-    }
-
-    fileList.forEach(function (uri) {
-        var row = storageContentTable.insertRow(-1);
-        var cell0 = row.insertCell(0);
-        var cell1 = row.insertCell(1);
-
-        cell0.style.textAlign = "left";
-        chumbucket._storageClient.getDirectFileUri(uri).then(function(result) {
-            var fileUri = result.getResult()['uri'];
-            cell0.innerHTML = "<a href=" + fileUri + ">" + uri + "</a>";
-
-            cell1.innerHTML = "<span class='glyphicon glyphicon-remove'></span>";
-            cell1.addEventListener('click', function() {
-                chumbucket._storageClient.deleteFileByUri(uri).then(function () {
-                    var bucketList = chumbucket.updateBucketList();
-
-                    for (var uriIndex = 0; uriIndex < bucketList.length; uriIndex++) {
-                        chumbucket.updateFilesListForBucket(bucketList[uriIndex]);
-                    }
-                });
-            });
-        });
-    });
-};
-
-chumbucket.updateFilesListForBucket = function (uri) {
-    chumbucket._storageClient.listFilesInBucket(uri).then(_updateFileListForBucket);
-};
-
-function _updateBucketList(result) {
-    var bucketList = result.getResult()['uris'];
-    var storageContentTable = document.querySelector('#bucket-list');
-    var rows = storageContentTable.rows;
-
-    for (var rowIndex = rows.length - 1; rowIndex > 0; rowIndex--) {
-        storageContentTable.deleteRow(rowIndex);
-    }  
- 
-    bucketList.forEach(function (uri) {
-        var row = storageContentTable.insertRow(-1);
-        var cell0 = row.insertCell(0);
-        cell0.innerHTML = uri;
-        cell0.style.textAlign = "left";
-
-        row.addEventListener('click', function () {
-            chumbucket.updateFilesListForBucket(uri);
-        });
-    });
-
-    return bucketList;
-};
-
-chumbucket.updateBucketList = function () {
-    return chumbucket._storageClient.listBuckets().then(_updateBucketList);
-};
-
-chumbucket.onBoot = function(document, options) {
-    var uploader = new chumbucket.Uploader(document, {
-        'uploadEndpoint': options['uploadEndpoint'],
-        'rootElement': '#upload',
-        'timingTable': '#upload-timing'
-    });
-
-    var uploadButton = document.querySelector('#upload-submit');
-    uploadButton.addEventListener('click', function(ev) {
-        var bucketName = document.querySelector('#bucket-name').value || '';
-        bucketName = bucketName.trim() || 'default';
-        uploader.startUpload(bucketName);
-    });
-
+chumbucket.onBoot_ = function(document, options) {
     var httpClient = new chumbucket.HTTPClient();
-    var storageClient = new chumbucket.StorageClient(httpClient);
-    chumbucket._storageClient = storageClient;
-    chumbucket.updateBucketList();
+    var keys = Object.getOwnPropertyNames(options);
 
-    var analysisClient = new chumbucket.AnalysisClient(httpClient);
-    var analysisButton = document.querySelector('#analysis-submit');
-    analysisButton.addEventListener('click', function(ev) {
-        var analysisNameField = document.querySelector('#analysis-name');
-        var analysisJobName = analysisNameField.value || '';
-        analysisJobName = analysisJobName.trim() || ('Job ' + new Date().getTime());
-        var analysisCodeField = document.querySelector('#analysis-query');
-        var analysisCode = analysisCodeField.value || '';
-        analysisCode = analysisCode.trim();
-        var analysisStatus = document.querySelector('#analysis-status');
-        var analysisConsole = document.querySelector('#analysis-console');
-
-        var disableAnalysis = function() {
-            analysisButton.setAttribute('disabled', 'disabled');
-            analysisNameField.setAttribute('disabled', 'disabled');
-            analysisNameField.value = analysisJobName + ' started...';
-            analysisStatus.textContent = 'Waiting';
-            analysisConsole.textContent = 'Job submitted. Hold tight...';
-        };
-
-        var enableAnalysis = function() {
-            analysisButton.removeAttribute('disabled');
-            analysisNameField.removeAttribute('disabled');
-            analysisNameField.value = '';
-        };
-
-        if (!analysisCode) {
-            return;
-        } else {
-            disableAnalysis();
+    chumbucket.registry_ = Object.create(null);
+    chumbucket.getRegistry = function(key) {
+        var value = chumbucket.registry_[key];
+        if (!value) {
+            value = chumbucket.init[key](document, options[key]);
+            chumbucket.registry_[key] = value;
         }
+        return value;
+    };
 
-        analysisClient.submitAndPoll(analysisJobName, analysisCode, function(state, result, uri) {
-            var analysisString = state.split(/_+/g).map(function(s) {
-                return s[0].toUpperCase() + s.slice(1).toLowerCase()
-            }).join(' ');
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        chumbucket.getRegistry(key);
+    }
+};
 
-            if (state === 'FAILED') {
-                var error = '';
-                analysisStatus.className = 'input-group-addon bg-danger';
-                analysisStatus.textContent = analysisString;
-                analysisConsole.textContent = result['error'];
-                enableAnalysis();
-            } else if (state === 'SUCCEEDED') {
-                analysisStatus.className = 'input-group-addon bg-success';
-                analysisStatus.innerHTML = '<a href="/analysis/result?uri=' + encodeURIComponent(uri) +
-                    '" target="_blank">' + analysisString + '</a>';
-                analysisConsole.textContent = "Analysis succeeded. Click the link to view the results.\n\n" +
-                                              "Job duration: " + chumbucket.Util.convertSecondsToString(result['durationMs'] / 1000) + "\n" +
-                                              "Data read: " + chumbucket.Util.convertBytesToString(result['dataReadBytes']) + "\n" +
-                                              "Throughput: " + chumbucket.Util.convertBytesToString(result['throughputBytesPerSecond']) + "/s";
-                enableAnalysis();
-            } else {
-                analysisStatus.className = 'input-group-addon bg-warning';
-                analysisStatus.textContent = analysisString;
-                analysisConsole.textContent = uri + ' is in progress...';
-            }
-        });
-    });
+chumbucket.init = {};
+
+chumbucket.init['http'] = function(document, options) {
+    return new chumbucket.HTTPClient();
+};
+
+chumbucket.init['upload'] = function(document, options) {
+    var uploadUi = new chumbucket.UploadUi(document, options);
+    uploadUi.boot();
+    return uploadUi;
+};
+
+chumbucket.init['storage'] = function(document, options) {
+    var httpClient = chumbucket.getRegistry('http');
+    var storageClient = new chumbucket.StorageClient(httpClient);
+    var storageUi = new chumbucket.StorageUi(document, storageClient, options);
+    storageUi.boot();
+    return storageUi;
+};
+
+chumbucket.init['analysis'] = function(document, options) {
+    var httpClient = chumbucket.getRegistry('http');
+    var analysisClient = new chumbucket.AnalysisClient(httpClient);
+    var analysisUi = new chumbucket.AnalysisUi(document, analysisClient, options);
+    analysisUi.boot();
+    return analysisUi;
 };
 
 chumbucket.booted_ = false;

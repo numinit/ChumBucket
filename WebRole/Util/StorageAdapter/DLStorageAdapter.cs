@@ -87,7 +87,6 @@ namespace ChumBucket.Util.Storage {
             try {
                 ValidationHelpers.ValidateUri(uri, typeof(DLEntityUri));
 
-                // Strip the leading slash from the URI's path to get the GUID
                 var bucket = uri.Bucket;
                 var key = Path.GetFileNameWithoutExtension(uri.Key);
                 var uploadPath = this.UploadPath(bucket, key);

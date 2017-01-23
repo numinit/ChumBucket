@@ -4,9 +4,9 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace ChumBucket.Controllers {
-    public class ApplicationController : Controller {
-        public ActionResult Index() {
+namespace WebRole.Controllers {
+    public class ToolsController : Controller {
+        public ActionResult Upload() {
             return View();
         }
 

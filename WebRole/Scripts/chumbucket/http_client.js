@@ -78,6 +78,7 @@ chumbucket.HTTPClient.prototype.initXHR = function(xhr, uri, method, type) {
     return new Promise(function(resolve, reject) {
         xhr.open(method, ref.makeAbsolute(uri), true);
         xhr.setRequestHeader('X-Requested-With', 'chumbucket/0.1');
+        xhr.setRequestHeader('X-Chum', 'Bucket');
         xhr.onreadystatechange = function(ev) {
             if (xhr.readyState !== XMLHttpRequest.DONE) {
                 return;

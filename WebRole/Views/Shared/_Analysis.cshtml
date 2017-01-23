@@ -1,0 +1,39 @@
+﻿<style type="text/css">
+    textarea#analysis-query, textarea#analysis-console {
+        font-family: "Share Tech Mono", monospace;
+    }
+
+    textarea#analysis-console {
+        background-color: #fff;
+    }
+</style>
+
+<div class="row">
+    <div class="col-sm-offset-2 col-sm-4">
+        <h3>U-SQL Query Editor</h3>
+        <div class="input-group">
+            <input type="text" class="form-control" id="analysis-name" placeholder="Job name">
+            <div class="input-group-addon" id="analysis-status">Stopped</div>
+        </div>
+        <div class="form-group">
+            <textarea class="form-control" rows="5" id="analysis-query" placeholder="@("Enter your query here. To reference an uploaded file, use the map named @in (e.g. @in[\"bucket/foo.csv\"] to reference an individual file, or @in[\"bucket\"] to reference all files in a given bucket).")"></textarea>
+        </div>
+        <button class="btn btn-default" id="analysis-submit" type="button">Start Analysis</button>
+    </div>
+    <div class="col-sm-4">
+        <h3>Analysis Console</h3>
+        <div class="form-group">
+            <textarea class="form-control" rows="10" id="analysis-console" placeholder="Output appears here..." readonly></textarea>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    chumbucket.config['analysis'] = {
+        'submit': '#analysis-submit',
+        'name': '#analysis-name',
+        'query': '#analysis-query',
+        'status': '#analysis-status',
+        'console': '#analysis-console'
+    };
+</script>

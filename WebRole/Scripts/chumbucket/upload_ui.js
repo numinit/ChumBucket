@@ -1,18 +1,62 @@
-﻿chumbucket.Uploader = function(document, options) {
+﻿chumbucket.UploadUi = function(document, options) {
     options = options || {};
 
     this._uploadEndpoint = options['uploadEndpoint'];
     this._rootElement = document.querySelector(options['rootElement']);
+    this._submitButtonSelector = options['submitButton'];
+    this._bucketNameField = document.querySelector(options['bucketNameField']);
     this._timingTable = document.querySelector(options['timingTable']);
     this._templateClass = options['templateClass'] || 'qq-template-manual-trigger';
+    this._fineUploaderOptions = options['fineUploaderOptions'] || {};
+};
 
-    var startTimes = {}, endTimes = {}, deltaTimes = {}, bucketNames = {};
+chumbucket.UploadUi.prototype.boot = function() {
+    var ref = this;
 
-    // Start the counter at 19 so that it updates the UI the first time a chunk is sent
-    var uiUpdateFreq = 20;
-    var uiUpdateCounter = uiUpdateFreq;
+    // Start up FineUploader
+    ref.bootFineUploader(this._fineUploaderOptions);
+
+    // This has to be deferred, since FineUploader actually creates the submit button here
+    this._submitButton = document.querySelector(this._submitButtonSelector);
+    this._submitButton.addEventListener('click', function(ev) {
+        var bucketName = ref.getBucketNameField().value || '';
+        bucketName = bucketName.trim() || 'default';
+        ref.startUpload(bucketName);
+    });
+}
+
+chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
+    options = options || {};
 
     var ref = this;
+    var startTimes = {}, endTimes = {}, deltaTimes = {}, bucketNames = {}, fileUploadedBytes = {}, fileTotalBytes = {};
+
+    // Start the counter at 19 so that it updates the UI the first time a chunk is sent
+    var uiUpdateFreq = 20, uiUpdateCounter = uiUpdateFreq;
+
+    var updateProgress = function(fileId) {
+        var uploadedBytes = fileUploadedBytes[fileId], totalBytes = fileTotalBytes[fileId];
+
+        // Get the row for this file from the timing table
+        var curRow = document.getElementById("file-" + fileId);
+        var uploadTime = curRow.cells[2];
+        var uploadSpeed = curRow.cells[3];
+        var bytesUploaded = curRow.cells[4];
+
+        // Record the current time for the file
+        var curDate = new Date();
+        var timeElapsed = (curDate.getTime() - startTimes[fileId].getTime()) / 1000;
+        uploadTime.textContent = chumbucket.Util.convertSecondsToString(timeElapsed);
+
+        // Record the average upload speed
+        uploadSpeed.textContent = chumbucket.Util.convertBytesToString(uploadedBytes / timeElapsed) + '/s';
+
+        // Record the number of bytes uploaded
+        bytesUploaded.textContent = chumbucket.Util.convertBytesToString(uploadedBytes) +
+            '/' +
+            chumbucket.Util.convertBytesToString(totalBytes);
+    };
+
     var config = {
         element: ref.getRootElement(),
         template: ref.getTemplateClass(),
@@ -37,7 +81,7 @@
             }
         },
         autoUpload: false,
-        debug: true,
+        debug: false,
         validation: {
             allowedExtensions: ['csv'],
             acceptFiles: ['text/csv']
@@ -72,15 +116,13 @@
 
                 // Write the filename and status to the new row
                 bucketNames[fileId] = ref.getCurrentBucket();
-                console.log("bucketNames:");
-                console.log(bucketNames);
                 if (!(fileId in bucketNames)) {
                     bucketNames[fileId] = "default";
                 }
                 filename.textContent = bucketNames[fileId] + "/" + name;
                 status.textContent = "In Progress";
             },
-            onProgress: function (fileId, name, uploadedBytes, totalBytes) {
+            onProgress: function(fileId, name, uploadedBytes, totalBytes) {
                 // Only update the UI every 20 times onProgress is called
                 uiUpdateCounter++;
                 if (uiUpdateCounter >= uiUpdateFreq) {
@@ -89,23 +131,9 @@
                     return;
                 }
 
-                // Get the row for this file from the timing table
-                var curRow = document.getElementById("file-" + fileId);
-                var uploadTime = curRow.cells[2];
-                var uploadSpeed = curRow.cells[3];
-                var bytesUploaded = curRow.cells[4];
-
-                // Record the current time for the file
-                var curDate = new Date();
-                var timeElapsed = (curDate.getTime() - startTimes[fileId].getTime()) / 1000;
-                uploadTime.textContent = chumbucket.Util.convertSecondsToString(timeElapsed);
-
-                // Record the average upload speed
-                uploadSpeed.textContent = chumbucket.Util.convertBytesToString(uploadedBytes / timeElapsed) + " per second";
-
-                // Record the number of bytes uploaded
-                bytesUploaded.textContent = chumbucket.Util.convertBytesToString(uploadedBytes) + "/" +
-                    chumbucket.Util.convertBytesToString(totalBytes);
+                fileUploadedBytes[fileId] = uploadedBytes;
+                fileTotalBytes[fileId] = totalBytes;
+                updateProgress(fileId);
             },
             onCancel: function(fileId) {
                 // Get the row for this file from the timing table
@@ -115,14 +143,17 @@
                 // Set the status for the file to cancelled
                 status.textContent = "Cancelled";
             },
-            onComplete: function (fileId, name, responseJson) {
+            onComplete: function(fileId, name, responseJson) {
                 // Determine whether the upload was successful
                 var success = responseJson['success'];
-                console.log(responseJson);
 
                 // Record the end time for submission in seconds
                 endTimes[fileId] = new Date();
                 deltaTimes[fileId] = (endTimes[fileId].getTime() - startTimes[fileId].getTime()) / 1000;
+
+                // Do a final progress update
+                fileUploadedBytes[fileId] = fileTotalBytes[fileId];
+                updateProgress(fileId);
 
                 // Update the row in the table to reflect the updated status and upload time
                 var curRow = document.getElementById("file-" + fileId);
@@ -139,9 +170,11 @@
                 delete endTimes[fileId];
                 delete deltaTimes[fileId];
                 delete bucketNames[fileId];
+                delete fileUploadedBytes[fileId];
+                delete fileTotalBytes[fileId];
 
-                // Updates the list of bucket in UI - defined in boot.js
-                chumbucket.updateBucketList();
+                // Updates the list of buckets
+                chumbucket.getRegistry('storage').updateBucketList(true);
             }
         }
     };
@@ -150,31 +183,39 @@
     this._currentBucket = null;
 };
 
-chumbucket.Uploader.prototype.startUpload = function(bucketName) {
+chumbucket.UploadUi.prototype.startUpload = function(bucketName) {
     this._currentBucket = bucketName;
     this._uploader.uploadStoredFiles();
 };
 
-chumbucket.Uploader.prototype.getUploadEndpoint = function() {
+chumbucket.UploadUi.prototype.getUploadEndpoint = function() {
     return this._uploadEndpoint.replace(/\/+$/g, '');
 };
 
-chumbucket.Uploader.prototype.getCurrentBucket = function() {
+chumbucket.UploadUi.prototype.getCurrentBucket = function() {
     return this._currentBucket;
 };
 
-chumbucket.Uploader.prototype.getRootElement = function() {
+chumbucket.UploadUi.prototype.getRootElement = function() {
     return this._rootElement;
 };
 
-chumbucket.Uploader.prototype.getTimingTable = function() {
+chumbucket.UploadUi.prototype.getSubmitButton = function() {
+    return this._submitButton;
+};
+
+chumbucket.UploadUi.prototype.getBucketNameField = function() {
+    return this._bucketNameField;
+};
+
+chumbucket.UploadUi.prototype.getTimingTable = function() {
     return this._timingTable;
 };
 
-chumbucket.Uploader.prototype.getTemplateClass = function() {
+chumbucket.UploadUi.prototype.getTemplateClass = function() {
     return this._templateClass;
 };
 
-chumbucket.Uploader.prototype.getUploader = function() {
+chumbucket.UploadUi.prototype.getUploader = function() {
     return this._uploader;
 };

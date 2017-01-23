@@ -304,6 +304,7 @@
     <Compile Include="Controllers\AnalysisController.cs" />
     <Compile Include="Controllers\ApplicationController.cs" />
     <Compile Include="Controllers\FileController.cs" />
+    <Compile Include="Controllers\ToolsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
@@ -325,10 +326,13 @@
     <Content Include="Scripts\chumbucket-ext.js" />
     <Content Include="Scripts\chumbucket.js" />
     <Content Include="Scripts\chumbucket\analysis_client.js" />
+    <Content Include="Scripts\chumbucket\analysis_ui.js" />
     <Content Include="Scripts\chumbucket\boot.js" />
+    <Content Include="Scripts\chumbucket\entity_uri.js" />
     <Content Include="Scripts\chumbucket\http_client.js" />
     <Content Include="Scripts\chumbucket\storage_client.js" />
-    <Content Include="Scripts\chumbucket\uploader.js" />
+    <Content Include="Scripts\chumbucket\storage_ui.js" />
+    <Content Include="Scripts\chumbucket\upload_ui.js" />
     <Content Include="Scripts\chumbucket\util.js" />
     <Content Include="Scripts\fineuploader\azure.fine-uploader.js" />
     <Content Include="packages.config">
@@ -336,10 +340,18 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Scripts\uri\uri.js" />
     <Content Include="Stylesheets\bootstrap\bootstrap-select.css" />
     <Content Include="Stylesheets\bootstrap\bootstrap-theme.css" />
     <Content Include="Stylesheets\bootstrap\bootstrap.css" />
     <Content Include="Stylesheets\bootstrap\datepicker.css" />
+    <Content Include="Stylesheets\fineuploader\continue.gif" />
+    <Content Include="Stylesheets\fineuploader\edit.gif" />
+    <Content Include="Stylesheets\fineuploader\loading.gif" />
+    <Content Include="Stylesheets\fineuploader\pause.gif" />
+    <Content Include="Stylesheets\fineuploader\processing.gif" />
+    <Content Include="Stylesheets\fineuploader\retry.gif" />
+    <Content Include="Stylesheets\fineuploader\trash.gif" />
     <Content Include="Stylesheets\fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Scripts\bootstrap\bootstrap-datepicker.js" />
     <Content Include="Scripts\bootstrap\bootstrap-select.js" />
@@ -386,6 +398,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Properties\PublishProfiles\ChumBucket - Web Deploy.pubxml" />
+    <Content Include="Views\Tools\Analysis.cshtml" />
+    <Content Include="Views\Shared\_Storage.cshtml" />
+    <Content Include="Views\Shared\_Analysis.cshtml" />
+    <Content Include="Views\Shared\_Upload.cshtml" />
+    <Content Include="Views\Tools\Upload.cshtml" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
