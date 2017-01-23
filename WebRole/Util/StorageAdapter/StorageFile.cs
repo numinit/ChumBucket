@@ -30,6 +30,8 @@ namespace ChumBucket.Util.Storage {
             get {
                 if (this._name != null && this._name.EndsWith(".csv")) {
                     return "text/csv";
+                } else if (this._name != null && this._name.EndsWith(".zip")) {
+                    return "application/zip";
                 } else if (this._contentType != null) {
                     return this._contentType;
                 } else {

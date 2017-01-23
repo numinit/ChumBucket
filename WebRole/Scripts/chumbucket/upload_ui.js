@@ -29,7 +29,7 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
     options = options || {};
 
     var ref = this;
-    var startTimes = {}, endTimes = {}, deltaTimes = {}, bucketNames = {}, fileUploadedBytes = {}, fileTotalBytes = {};
+    var startTimes = {}, endTimes = {}, deltaTimes = {}, fileNames = {}, bucketNames = {}, fileUploadedBytes = {}, fileTotalBytes = {};
 
     // Start the counter at 19 so that it updates the UI the first time a chunk is sent
     var uiUpdateFreq = 20, uiUpdateCounter = uiUpdateFreq;
@@ -85,16 +85,13 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
             endpoint: '/file/uploadSignature'
         },
         uploadSuccess: {
-            endpoint: '/file/uploadSuccess',
-            params: {
-                mimeType: 'text/csv'
-            }
+            endpoint: '/file/uploadSuccess'
         },
         autoUpload: false,
         debug: false,
         validation: {
-            allowedExtensions: ['csv'],
-            acceptFiles: ['text/csv']
+            allowedExtensions: ['csv', 'zip'],
+            acceptFiles: ['text/csv', 'application/zip']
         },
         deleteFile: {
             enabled: true
@@ -109,6 +106,7 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
             onUpload: function(fileId, name) {
                 // Record the start time for submission
                 startTimes[fileId] = new Date();
+                fileNames[fileId] = name;
 
                 // Create a new row in the timing table
                 var timingTable = ref.getTimingTable();
@@ -135,6 +133,7 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
             onProgress: function(fileId, name, uploadedBytes, totalBytes) {
                 fileUploadedBytes[fileId] = uploadedBytes;
                 fileTotalBytes[fileId] = totalBytes;
+                fileNames[fileId] = name;
 
                 // Only update the UI every 20 times onProgress is called
                 uiUpdateCounter++;
@@ -162,6 +161,7 @@ chumbucket.UploadUi.prototype.bootFineUploader = function(options) {
                 // Record the end time for submission in seconds
                 endTimes[fileId] = new Date();
                 deltaTimes[fileId] = (endTimes[fileId].getTime() - startTimes[fileId].getTime()) / 1000;
+                fileNames[fileId] = name;
 
                 // Do a final progress update
                 fileUploadedBytes[fileId] = fileTotalBytes[fileId];

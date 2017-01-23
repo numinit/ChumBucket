@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Web.Mvc;
 using WebRole;
 using System.Security;
 using ChumBucket.Util.Storage;
 using ChumBucket.Util.Uris;
+using System.IO.Compression;
+using System.Web;
+using MimeTypes;
 
 namespace ChumBucket.Controllers {
     [RoutePrefix("file")]
@@ -153,17 +157,20 @@ namespace ChumBucket.Controllers {
                 var blobName = Request.Form["blob"];
                 var fileName = Request.Form["name"];
 
-                // Added in the `params` object client-side.
-                var mimeType = Request.Form["mimeType"];
-
                 if (container == null || blobName == null || fileName == null ||
                     container.Length == 0 || blobName.Length == 0 || fileName.Length == 0) {
                     throw new ArgumentException("container, blob, and name must be provided");
                 }
 
                 // Build a request/result URI
+                var mimeType = MimeTypeMap.GetMimeType(Path.GetExtension(blobName));
                 var requestUri = new Uri($"{container}/{blobName}");
                 var resultUri = this._blobAdapter.FinalizeUploadedBlob(requestUri, fileName, mimeType);
+
+                // Unzip if necessary
+                if (mimeType == "application/zip") {
+                    this.Unzip(resultUri);
+                }
 
                 Response.StatusCode = 200;
                 return Json(new {
@@ -182,6 +189,23 @@ namespace ChumBucket.Controllers {
                 return Json(new {
                     error = e.Message
                 });
+            }
+        }
+
+        private void Unzip(BlobStorageEntityUri uri) {
+            var file = this._blobAdapter.Retrieve(uri);
+            using (var zip = new ZipArchive(file.InputStream)) {
+                foreach (var entry in zip.Entries) {
+                    var filename = entry.Name;
+                    if (filename.EndsWith(".csv")) {
+                        // Extract it to the same bucket
+                        var zipEntryUri = new BlobStorageEntityUri(bucket: uri.Bucket, key: filename);
+                        var storageFile = new StorageFile(entry.Open(), zipEntryUri, "text/csv");
+
+                        // Store it
+                        this._blobAdapter.Store(storageFile, zipEntryUri.Bucket);
+                    }
+                }
             }
         }
     }
