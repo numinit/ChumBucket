@@ -24,35 +24,6 @@ namespace ChumBucket.Controllers {
         private BlobStorageAdapter _blobAdapter = AzureConfig.BLOB_STORAGE;
 
         [HttpGet]
-        [Route("query")]
-        public ActionResult Query() {
-            try {
-                // Give them back a direct SAS URI.
-                var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
-                var sasUri = this._blobAdapter.GetSasForBlob(uri, Request.HttpMethod, new[] {"GET"}, 60);
-
-                Response.StatusCode = 200;
-                return Json(new {
-                    result = new {
-                        uri = sasUri.ToString()
-                    }
-                }, JsonRequestBehavior.AllowGet);
-            } catch (Exception e) when (e is ArgumentException || e is FormatException) {
-                // Bad request
-                Response.StatusCode = 400;
-                return Json(new {
-                    error = e.Message
-                }, JsonRequestBehavior.AllowGet);
-            } catch (KeyNotFoundException e) {
-                // Not found
-                Response.StatusCode = 404;
-                return Json(new {
-                    error = e.Message
-                }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        [HttpGet]
         [Route("listBuckets")]
         public ActionResult ListBuckets() {
             var buckets = this._blobAdapter.ListBuckets().Select(x => x.ToString());
@@ -88,11 +59,54 @@ namespace ChumBucket.Controllers {
         }
 
         [HttpGet]
-        [Route("sas")]
-        public ActionResult Sas() {
+        [Route("clientSas")]
+        public ActionResult ClientSas() {
+            try {
+                // Give them back a direct SAS URI.
+                var uri = new BlobStorageEntityUri(uri: Request.QueryString["uri"]);
+                var verb = Request.QueryString["verb"];
+                if (verb == null) {
+                    throw new ArgumentException("no verb provided");
+                }
+
+                var sasUri = this._blobAdapter.GetSasForBlob(uri, verb, new[] {"GET", "DELETE"}, 60);
+
+                Response.StatusCode = 200;
+                return Json(new {
+                    result = new {
+                        uri = sasUri.ToString()
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            } catch (Exception e) when (e is ArgumentException || e is FormatException) {
+                // Bad request
+                Response.StatusCode = 400;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            } catch (SecurityException e) {
+                // Forbidden
+                Response.StatusCode = 403;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            } catch (KeyNotFoundException e) {
+                // Not found
+                Response.StatusCode = 404;
+                return Json(new {
+                    error = e.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        [HttpGet]
+        [Route("uploadSas")]
+        public ActionResult UploadSas() {
             try {
                 var blobUri = new Uri(Request.QueryString["bloburi"]);
                 var verb = Request.QueryString["_method"];
+                if (verb == null) {
+                    throw new ArgumentException("no verb provided");
+                }
 
                 var sasUri = this._blobAdapter.GetSasForBlob(blobUri, verb, new[] {"PUT", "DELETE"});
                 Response.StatusCode = 200;
@@ -113,8 +127,8 @@ namespace ChumBucket.Controllers {
         }
 
         [HttpPost]
-        [Route("success")]
-        public ActionResult Success() {
+        [Route("uploadSuccess")]
+        public ActionResult UploadSuccess() {
             try {
                 var container = Request.Form["container"];
                 var blobName = Request.Form["blob"];
@@ -122,6 +136,11 @@ namespace ChumBucket.Controllers {
 
                 // Added in the `params` object client-side.
                 var mimeType = Request.Form["mimeType"];
+
+                if (container == null || blobName == null || fileName == null ||
+                    container.Length == 0 || blobName.Length == 0 || fileName.Length == 0) {
+                    throw new ArgumentException("container, blob, and name must be provided");
+                }
 
                 // Build a request/result URI
                 var requestUri = new Uri(string.Format("{0}/{1}", container, blobName));

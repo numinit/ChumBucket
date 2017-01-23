@@ -12,6 +12,85 @@ using System.Web;
 using WebRole.Util;
 
 namespace ChumBucket.Util {
+    public class DLJobStatus {
+        private JobEntityUri _uri;
+        private string _status;
+        private DateTime _startTime;
+        private DateTime? _endTime;
+        private long? _bytes;
+        private double? _throughput;
+        private string _error;
+
+        public bool Succeeded {
+            get {
+                return this._status == "SUCCEEDED";
+            }
+        }
+
+        public bool Failed {
+            get {
+                return this._status == "FAILED";
+            }
+        }
+
+        public bool InProgress {
+            get {
+                return !this.Succeeded && !this.Failed;
+            }
+        }
+
+        public JobEntityUri Uri {
+            get { return this._uri; }
+        }
+
+        public string Status {
+            get { return this._status; }
+        }
+
+        public DateTime StartTime {
+            get { return this._startTime; }
+        }
+
+        public DateTime? EndTime {
+            get { return this._endTime; }
+        }
+
+        public TimeSpan Duration {
+            get {
+                if (!this.EndTime.HasValue) {
+                    return DateTime.UtcNow.Subtract(this.StartTime);
+                } else {
+                    return this.EndTime.Value.Subtract(this.StartTime);
+                }
+            }
+        }
+
+        public long? Bytes {
+            get { return this._bytes; }
+        }
+
+        public double? Throughput {
+            get { return this._throughput; }
+        }
+
+        public string Error {
+            get { return this._error; }
+        }
+
+        public DLJobStatus(JobEntityUri uri, string status, DateTime startTime,
+                           DateTime? endTime = null,
+                           long? bytes = null, double? throughput = null,
+                           string error = null) {
+            this._uri = uri;
+            this._status = status;
+            this._startTime = startTime;
+            this._endTime = endTime;
+            this._bytes = bytes;
+            this._throughput = throughput;
+            this._error = error;
+        }
+    }
+
     public class DLJobAdapter {
         private static string DATA_LAKE_AUTHORITY = "dl";
         private static string JOB_RESULT_BUCKET = "result";
@@ -50,21 +129,56 @@ namespace ChumBucket.Util {
             var jobInfo = this._jobClient.Job.Create(this._client.AccountName, jobId, parameters);
 
             // Return a chumbucket+job://dl/{jobKey} URI for this job.
-            return new JobEntityUri(bucket: DATA_LAKE_AUTHORITY, key: jobKey);
+            return this.GuidToJobUri(jobId);
         }
 
-        public JobInformation GetJobInfo(JobEntityUri uri) {
+        public DLJobStatus GetJobStatus(JobEntityUri uri) {
             // Get the job GUID from the URI
             if (uri.Bucket != DATA_LAKE_AUTHORITY) {
                 throw new ArgumentException("invalid bucket");
             }
 
-            var guid = new Guid(uri.Key);
-            var ret = this._jobClient.Job.Get(this._client.AccountName, guid);
-            if (ret == null) {
+            var guid = Guid.Parse(uri.Key);
+            var info = this._jobClient.Job.Get(this._client.AccountName, guid);
+            if (info == null) {
                 throw new KeyNotFoundException("job does not exist");
             }
-            return ret;
+
+            DateTime startTime = info.SubmitTime.Value.DateTime;
+            DateTime? endTime = null;
+            var state = info.State.Value;
+            var statusString = "UNKNOWN";
+            if (state == JobState.Ended) {
+                statusString = info.Result.ToString().ToUpper();
+                endTime = info.EndTime.Value.DateTime;
+            } else {
+                statusString = state.ToString().ToUpper();
+            }
+
+            if (info.Result.HasValue && info.Result.Value == JobResult.Failed) {
+                // The job failed
+                return new DLJobStatus(uri: uri, status: statusString,
+                                       startTime: startTime, endTime: endTime,
+                                       error: BuildErrorMessage(info));
+            } else if (info.Result.HasValue && info.Result.Value == JobResult.Succeeded) {
+                // The job succeeded; collect statistics
+                var stats = this._jobClient.Job.GetStatistics(this._client.AccountName, guid);
+                long bytes = 0;
+                double seconds = 0;
+                foreach (var stage in stats.Stages) {
+                    if (stage.DataRead.HasValue && stage.TotalSucceededTime.HasValue) {
+                        bytes += stage.DataRead.Value;
+                        seconds += stage.TotalSucceededTime.Value.TotalSeconds;
+                    }
+                }
+                return new DLJobStatus(uri: uri, status: statusString,
+                                       startTime: startTime, endTime: endTime,
+                                       bytes: bytes, throughput: bytes / seconds);
+            } else {
+                // The job is in progress
+                return new DLJobStatus(uri: uri, status: statusString,
+                                       startTime: startTime, endTime: endTime);
+            }
         }
 
         public StorageFile GetJobResult(JobEntityUri uri) {
@@ -74,6 +188,10 @@ namespace ChumBucket.Util {
 
             var adlUri = this.KeyToAdlUri(uri.Key);
             return this._resultStorage.Retrieve(adlUri);
+        }
+
+        private JobEntityUri GuidToJobUri(Guid guid) {
+            return new JobEntityUri(bucket: DATA_LAKE_AUTHORITY, key: guid.ToString());
         }
 
         private EntityUri KeyToAdlUri(string key) {
@@ -146,6 +264,59 @@ DECLARE @in SQL.MAP<string, string> = new SQL.MAP<string, string> {{", jobId.ToS
             }
 
             return this._blobStorageFactory.BuildDirectUri(bucket, key);
+        }
+
+        private static string BuildErrorMessage(JobInformation info) {
+            var builder = new StringBuilder();
+            var i = 1;
+            foreach (var error in info.ErrorMessage) {
+                AppendError(i, error, builder);
+                if (error.InnerError != null) {
+                    // This is annoying. The InnerError isn't provided as a JobErrorDetails,
+                    // so make one ourselves.
+                    var innerError = error.InnerError;
+                    var innerErrorDetails = new JobErrorDetails(description: innerError.Description, details: innerError.Details,
+                                                                errorId: innerError.ErrorId, message: innerError.Message,
+                                                                resolution: innerError.Resolution);
+                    var innerErrorBuilder = new StringBuilder();
+
+                    // Now, perform the append.
+                    AppendError(i, innerErrorDetails, innerErrorBuilder);
+
+                    // Then, indent each line from the inner error.
+                    using (var reader = new StringReader(innerErrorBuilder.ToString())) {
+                        string line = string.Empty;
+                        while (line != null) {
+                            line = reader.ReadLine();
+                            if (line != null) {
+                                builder.AppendFormat("    {0}", line);
+                            }
+                        }
+                    }
+                }
+
+                i += 1;
+            }
+
+            return builder.ToString();
+        }
+
+        private static void AppendError(int idx, JobErrorDetails error, StringBuilder builder) {
+            builder.AppendFormat(@"[{0}] {1}: {2}
+
+=== DESCRIPTION ===
+{3}
+
+=== DETAILS ===
+{4}", idx, error.ErrorId, error.Message, error.Description, error.Details);
+
+            var resolution = error.Resolution;
+            if (resolution != null && resolution.Length > 0) {
+                builder.AppendFormat(@"
+
+=== RESOLUTION ===
+{0}", resolution);
+            }
         }
     }
 }

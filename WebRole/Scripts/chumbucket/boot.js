@@ -70,7 +70,7 @@ chumbucket.onBoot = function(document, options) {
                 analysisStatus.className = 'input-group-addon bg-success';
                 analysisStatus.innerHTML = '<a href="/analysis/result?uri=' + encodeURIComponent(uri) +
                     '" target="_blank">' + analysisString + '</a>';
-                analysisConsole.textContent = 'Analysis succeeded. Click the link above to view the results'.
+                analysisConsole.textContent = 'Analysis succeeded. Click the link above to view the results.';
                 enableAnalysis();
             } else {
                 analysisStatus.className = 'input-group-addon bg-warning';

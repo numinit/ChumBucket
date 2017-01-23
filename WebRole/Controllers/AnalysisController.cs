@@ -23,26 +23,6 @@ namespace WebRole.Controllers {
             public string Code { get; set; }
         }
 
-        private class JobStatusResult {
-            [JsonProperty("status")]
-            public string Status { get; set; }
-
-            [JsonProperty("startTime")]
-            public string StartTime { get; set; }
-
-            [JsonProperty("durationMs")]
-            public int Duration { get; set; }
-
-            [JsonProperty("result")]
-            public string Result { get; set; }
-
-            public bool Success {
-                get {
-                    return this.Status.Equals("SUCCEEDED");
-                }
-            }
-        }
-
         [HttpPost]
         [Route("submit")]
         public ActionResult Submit() {
@@ -77,10 +57,20 @@ namespace WebRole.Controllers {
         public ActionResult Status() {
             try {
                 var uri = new JobEntityUri(uri: Request.QueryString["uri"]);
-                var job = this._job.GetJobInfo(uri);
+                var job = this._job.GetJobStatus(uri);
 
                 Response.StatusCode = 200;
-                return this.JobToResult(job);
+                return Json(new {
+                    result = new {
+                        uri = job.Uri.ToString(),
+                        status = job.Status,
+                        startTime = job.StartTime.ToString("o"),
+                        durationMs = (int)Math.Floor(job.Duration.TotalMilliseconds),
+                        bytesRead = job.Succeeded ? job.Bytes.Value : -1,
+                        throughput = job.Succeeded ? job.Throughput.Value : -1.0,
+                        error = job.Failed ? job.Error : null
+                    }
+                }, JsonRequestBehavior.AllowGet);
             } catch (Exception e) when (e is ArgumentException || e is FormatException || e is JsonException) {
                 // Bad request
                 Response.StatusCode = 400;
@@ -101,8 +91,8 @@ namespace WebRole.Controllers {
         public ActionResult Result() {
             try {
                 var uri = new JobEntityUri(uri: Request.QueryString["uri"]);
-                var job = this._job.GetJobInfo(uri);
-                if (job.Result == JobResult.Succeeded) {
+                var job = this._job.GetJobStatus(uri);
+                if (job.Succeeded) {
                     var file = this._job.GetJobResult(uri);
                     Response.StatusCode = 200;
 
@@ -123,93 +113,6 @@ namespace WebRole.Controllers {
                 return Json(new {
                     error = e.Message
                 }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        private JsonResult JobToResult(JobInformation info) {
-            var state = info.State.Value;
-            var statusString = "UNKNOWN";
-            var startTime = info.SubmitTime.Value;
-            var startTimeString = startTime.ToString("o");
-            int duration = 0;
-            if (state == JobState.Ended) {
-                statusString = info.Result.ToString().ToUpper();
-                duration = (int)Math.Round(info.EndTime.Value.Subtract(startTime).TotalMilliseconds);
-            } else {
-                statusString = state.ToString().ToUpper();
-                duration = (int)Math.Round(DateTimeOffset.Now.Subtract(startTime).TotalMilliseconds);
-            }
-
-            if (info.Result != JobResult.Failed) {
-                return Json(new {
-                    result = new {
-                        status = statusString,
-                        startTime = startTimeString,
-                        durationMs = duration
-                    }
-                }, JsonRequestBehavior.AllowGet);
-            } else {
-                return Json(new {
-                    result = new {
-                        status = statusString,
-                        startTime = startTimeString,
-                        durationMs = duration,
-                        error = BuildErrorMessage(info)
-                    }
-                }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        private static string BuildErrorMessage(JobInformation info) {
-            var builder = new StringBuilder();
-            var i = 1;
-            foreach (var error in info.ErrorMessage) {
-                AppendError(i, error, builder);
-                if (error.InnerError != null) {
-                    // This is annoying. The InnerError isn't provided as a JobErrorDetails,
-                    // so make one ourselves.
-                    var innerError = error.InnerError;
-                    var innerErrorDetails = new JobErrorDetails(description: innerError.Description, details: innerError.Details,
-                                                                errorId: innerError.ErrorId, message: innerError.Message,
-                                                                resolution: innerError.Resolution);
-                    var innerErrorBuilder = new StringBuilder();
-
-                    // Now, perform the append.
-                    AppendError(i, innerErrorDetails, innerErrorBuilder);
-
-                    // Then, indent each line from the inner error.
-                    using (var reader = new StringReader(innerErrorBuilder.ToString())) {
-                        string line = string.Empty;
-                        while (line != null) {
-                            line = reader.ReadLine();
-                            if (line != null) {
-                                builder.AppendFormat("    {0}", line);
-                            }
-                        }
-                    }
-                }
-
-                i += 1;
-            }
-
-            return builder.ToString();
-        }
-
-        private static void AppendError(int idx, JobErrorDetails error, StringBuilder builder) {
-            builder.AppendFormat(@"[{0}] {1}: {2}
-
-=== DESCRIPTION ===
-{3}
-
-=== DETAILS ===
-{4}", idx, error.ErrorId, error.Message, error.Description, error.Details);
-
-            var resolution = error.Resolution;
-            if (resolution != null && resolution.Length > 0) {
-                builder.AppendFormat(@"
-
-=== RESOLUTION ===
-{0}", resolution);
             }
         }
     }

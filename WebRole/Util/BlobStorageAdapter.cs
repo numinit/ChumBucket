@@ -166,6 +166,7 @@ namespace ChumBucket.Util {
          * If there's a mismatch between the direct URI and our configuration,
          * throws a SecurityException.
          * <param name="blobUri">The blob URI</param>
+         * <param name="bucketsOnly">Whether to only allow bucket URIs</param>
          * <returns>The corresponding BlobStorageEntityUri</returns>
          */
         public BlobStorageEntityUri GetBlobStorageHandle(Uri blobUri, bool bucketsOnly = false) {
