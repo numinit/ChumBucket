@@ -19,7 +19,7 @@ namespace ChumBucket.Util.Uris {
         /**
          * <see cref="IDirectUriFactory"/>
          */
-        public Uri BuildDirectUri(string bucket, string key) {
+        public override Uri BuildDirectUri(string bucket, string key) {
             var entityUri = new DLEntityUri(bucket: bucket, key: key);
             return entityUri.ToDirectUri(this._adapter.GetAccountName(),
                                          this._adapter.GetContainerName());
@@ -28,7 +28,7 @@ namespace ChumBucket.Util.Uris {
         /**
          * <see cref="IDirectUriFactory"/>
          */
-        public Uri BuildDirectHttpsUri(string bucket, string key) {
+        public override Uri BuildDirectHttpsUri(string bucket, string key) {
             var entityUri = new DLEntityUri(bucket: bucket, key: key);
             return entityUri.ToDirectHttpsUri(this._adapter.GetAccountName(),
                                               this._adapter.GetContainerName());

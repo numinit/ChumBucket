@@ -42,15 +42,15 @@ namespace ChumBucket.Util.Storage {
             this.Mkdir(containerName);
         }
 
-        public string GetAccountName() {
+        public override string GetAccountName() {
             return this._client.AccountName;
         }
 
-        public string GetContainerName() {
+        public override string GetContainerName() {
             return this._containerName;
         }
 
-        public void Store(StorageFile file, string bucket) {
+        public override void Store(StorageFile file, string bucket) {
             if (file.ContentType != "text/csv") {
                 throw new ArgumentException("content type must be text/csv");
             } else {
@@ -83,7 +83,7 @@ namespace ChumBucket.Util.Storage {
             this._fs.Append(this._client.AccountName, metaPath, metaStream);
         }
 
-        public StorageFile Retrieve(EntityUri uri) {
+        public override StorageFile Retrieve(EntityUri uri) {
             try {
                 ValidationHelpers.ValidateUri(uri, typeof(DLEntityUri));
 
@@ -107,7 +107,7 @@ namespace ChumBucket.Util.Storage {
             }
         }
 
-        public void Delete(EntityUri uri) {
+        public override void Delete(EntityUri uri) {
             ValidationHelpers.ValidateUri(uri, typeof(DLEntityUri));
 
             var bucket = uri.Bucket;
@@ -124,7 +124,7 @@ namespace ChumBucket.Util.Storage {
             }
         }
 
-        public ICollection<EntityUri> ListBuckets() {
+        public override ICollection<EntityUri> ListBuckets() {
             var ret = new List<EntityUri>();
             var statuses = this._fs.ListFileStatus(this._client.AccountName, this._containerName);
             foreach (var status in statuses.FileStatuses.FileStatus) {
@@ -135,7 +135,7 @@ namespace ChumBucket.Util.Storage {
             return ret;
         }
 
-        public ICollection<EntityUri> ListFiles(string bucket) {
+        public override ICollection<EntityUri> ListFiles(string bucket) {
             ValidationHelpers.ValidateBucketName(bucket);
 
             var ret = new List<EntityUri>();

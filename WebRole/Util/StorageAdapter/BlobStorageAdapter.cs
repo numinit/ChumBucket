@@ -31,15 +31,15 @@ namespace ChumBucket.Util.Storage {
             this._blobContainer.CreateIfNotExists();
         }
 
-        public string GetAccountName() {
+        public override string GetAccountName() {
             return this._blobClient.Credentials.AccountName;
         }
 
-        public string GetContainerName() {
+        public override string GetContainerName() {
             return this._blobContainer.Name;
         }
 
-        public void Store(StorageFile file, string bucket) {
+        public override void Store(StorageFile file, string bucket) {
             ValidationHelpers.ValidateBucketName(bucket);
 
             var directory = this._blobContainer.GetDirectoryReference(bucket);
@@ -51,7 +51,7 @@ namespace ChumBucket.Util.Storage {
             }
         }
 
-        public StorageFile Retrieve(EntityUri uri) {
+        public override StorageFile Retrieve(EntityUri uri) {
             ValidationHelpers.ValidateUri(uri, typeof(BlobStorageEntityUri));
 
             // Get a reference to the directory and the blob
@@ -73,7 +73,7 @@ namespace ChumBucket.Util.Storage {
             }
         }
 
-        public void Delete(EntityUri uri) {
+        public override void Delete(EntityUri uri) {
             ValidationHelpers.ValidateUri(uri, typeof(BlobStorageEntityUri));
 
             var directory = this._blobContainer.GetDirectoryReference(uri.Bucket);
@@ -86,7 +86,7 @@ namespace ChumBucket.Util.Storage {
             }
         }
 
-        public ICollection<EntityUri> ListBuckets() {
+        public override ICollection<EntityUri> ListBuckets() {
             var list = new List<EntityUri>();
             var blobs = this._blobContainer.ListBlobs();
             var buckets = blobs.Where(b => b is CloudBlobDirectory);
@@ -96,7 +96,7 @@ namespace ChumBucket.Util.Storage {
             return list;
         }
 
-        public ICollection<EntityUri> ListFiles(string bucket) {
+        public override ICollection<EntityUri> ListFiles(string bucket) {
             ValidationHelpers.ValidateBucketName(bucket);
             var list = new List<EntityUri>();
             var directory = this._blobContainer.GetDirectoryReference(bucket);
