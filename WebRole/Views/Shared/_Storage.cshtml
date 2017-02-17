@@ -1,0 +1,33 @@
+﻿<style type="text/css">
+    span.reference {
+        font-family: "Share Tech Mono", monospace;
+        color: #ccc;
+    }
+</style>
+
+<div class="row">
+    <h3>Uploaded Content</h3>
+    <div class="col-sm-offset-2 col-sm-4">
+        <table id="file-bucket-list" class="table table-hover">
+            <tr>
+                <th>Bucket name</th>
+            </tr>
+        </table>
+    </div>
+
+    <div class="col-sm-4">
+        <table id="file-object-list" class="table table-hover">
+            <tr>
+                <th>File name</th>
+                <th></th>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+    chumbucket.config['storage'] = {
+        'bucketTable': '#file-bucket-list',
+        'fileTable': '#file-object-list'
+    };
+</script>
